@@ -1,0 +1,32 @@
+{
+    "name": "svetogor/assistant",
+    "type": "project",
+    "require": {
+        "laudis/neo4j-php-client": "dev-main",
+        "slim/slim": "^4.10",
+        "slim/psr7": "dev-master"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest",
+        "maximebf/debugbar": "1.23.x-dev",
+        "symfony/var-dumper": "7.2.x-dev",
+        "symfony/web-profiler-bundle": "7.2.x-dev",
+        "barryvdh/laravel-debugbar": "3.14.x-dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "svetogor"
+        }
+    ],
+    "minimum-stability": "dev",
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    }
+}

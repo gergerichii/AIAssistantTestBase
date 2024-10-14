@@ -1,0 +1,134 @@
+services:
+  nginx:
+    container_name: assistant-nginx
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    environment:
+      TZ: "Europe/Moscow"
+    volumes:
+      - ./php:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - phpsocket:/var/run
+    networks:
+      - assistant-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  php:
+    container_name: assistant-php
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    volumes:
+      - ./php:/var/www
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+      - phpsocket:/var/run
+    links:
+      - nginx:assistant-api.local
+    networks:
+      - assistant-network
+    depends_on:
+      - db
+      - redis
+      - neo4j
+    environment:
+      PHP_IDE_CONFIG: "serverName=assistant-api-php8.3"
+      POSTGRES_DB: "assistant"
+      POSTGRES_USER: "assistant"
+      POSTGRES_PASSWORD: "assistant"
+      NEO4J_URI: "bolt://neo4j:7687"
+      REDIS_HOST: "redis"
+      TZ: "Europe/Moscow"
+
+  db:
+    container_name: assistant-db
+    image: postgres:16
+    environment:
+      POSTGRES_DB: assistant
+      POSTGRES_USER: assistant
+      POSTGRES_PASSWORD: assistant
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    networks:
+      - assistant-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    container_name: assistant-redis
+    image: redis:7
+    networks:
+      - assistant-network
+
+  neo4j:
+    container_name: assistant-neo4j
+    image: neo4j:5.24-enterprise
+    environment:
+      NEO4J_AUTH: neo4j/assistant
+      NEO4J_internal_dbms_tx__log_fail__on__corrupted__log__files: false
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: yes
+      NEO4J_server_memory_pagecache_size: 2G
+      NEO4J_dbms_memory_transaction_total_max: 4G
+      NEO4J_db_memory_transaction_max: 4G
+      NEO4J_server_memory_heap_max__size: 8G
+      NEO4J_PLUGINS: '["apoc", "apoc-extended", "graph-data-science"]'
+      NEO4J_apoc_export_file_enabled: true
+      NEO4J_apoc_import_file_enabled: true
+      NEO4J_apoc_import_file_use__neo4j__config: true
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./neo4j/data:/data
+      - ./neo4j/logs:/logs
+      - ./neo4j/conf:/conf
+      - ./neo4j/plugins:/plugins
+      - ./neo4j/licenses:/licenses
+      - ./neo4j/import:/import
+      - ./neo4j/metrics:/metrics
+    networks:
+      - assistant-network
+
+  svelte:
+    container_name: assistant-svelte
+    image: node:18-alpine
+    volumes:
+      - type: bind
+        source: ./frontend
+        target: /app
+    working_dir: /app
+    command: sh -c "npm install -g npm@10.9.0 && npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - PORT=5173
+      - HOST=0.0.0.0
+    networks:
+      - assistant-network
+
+  grpc:
+    container_name: assistant-grpc
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    volumes:
+      - ./php:/var/www
+    networks:
+      - assistant-network
+    depends_on:
+      - php
+    environment:
+      PHP_IDE_CONFIG: "serverName=assistant-grpc"
+      TZ: "Europe/Moscow"
+
+volumes:
+  phpsocket:
+
+networks:
+  assistant-network:
+    driver: bridge
