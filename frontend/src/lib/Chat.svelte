@@ -1,60 +1,121 @@
 <script lang="ts">
     import { onMount, afterUpdate } from 'svelte'; // Импортируем onMount и afterUpdate из Svelte
+    import TypingAnimation from './TypingAnimation.svelte'; // Импортируем компонент анимации
 
-    const API_URL = 'http://assistant.local/api/chat_bot'; // Константа для URL API
+    const API_URL: string = 'http://assistant.local/api/chat_bot'; // Константа для URL API
 
     let message: string = '';
     let messages: Array<{ type: string; text: string }> = [];
+    let currentGptModel: string | null = null; // Значение по умолчанию для выпадающего списка
+    let gptModelOptions: Array<{ id: string | null; name: string }> = [{ id: null, name: 'нет модели' }];
+    let isDropdownDisabled: boolean = true;
+    let isTyping: boolean = false; // Флаг для отображения анимации
 
-    // Функция для отправки запроса на сервер
+    /**
+     * Отправляет сообщение на сервер и обрабатывает ответ.
+     * Если сообщение не пустое и выбрана модель, добавляет его в список сообщений и отправляет на сервер.
+     */
     async function sendMessage() {
-        if (message.trim() !== '') {
+        if (message.trim() !== '' && currentGptModel !== null) {
             // Отображение сообщения пользователя
             addMessage('user', message);
 
-            // Отправка запроса на сервер
-            const data = await fetchMessageFromServer(message);
-
-            // Добавление ответа от бота
-            addMessage('bot', data.reply);
+            await fetchMessageFromServer(message, currentGptModel);
             message = '';
         }
     }
 
-    // Функция для добавления сообщения в список
+    /**
+     * Очищает чат и отправляет сообщение @clearContext на сервер.
+     */
+    async function clearContext() {
+        messages = [];
+        await fetchMessageFromServer('@clearContext', currentGptModel);
+    }
+
+    /**
+     * Добавляет сообщение в список сообщений.
+     *
+     * @param type Тип сообщения (например, 'user' или 'bot').
+     * @param text Текст сообщения.
+     */
     function addMessage(type: string, text: string) {
         messages = [...messages, { type, text }];
     }
 
-    // Функция для отправки сообщения на сервер и получения ответа
-    async function fetchMessageFromServer(msg: string) {
+    /**
+     * Отправляет сообщение на сервер и получает ответ.
+     *
+     * @param msg Сообщение для отправки.
+     * @param model Текущая модель, используемая для обработки сообщения.
+     */
+    async function fetchMessageFromServer(msg: string, currentGptModel: string | null) {
+        isTyping = true;
+        
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: msg }),
+            body: JSON.stringify({ message: msg, currentGptModel: currentGptModel }),
         });
 
+        isTyping = false; // Отключаем анимацию после получения ответа
+
         if (response.ok) {
-            return await response.json();
+            const data = await response.json();
+            addMessage('bot', data.reply);
+            applyConfig(data.config);
         } else {
             console.error('Ошибка при отправке сообщения на сервер');
-            return { reply: 'Ошибка' };
+            addMessage('bot', 'Ошибка');
         }
     }
 
-    // Обработчик нажатия клавиши Enter
+    /**
+     * Применяет конфигурацию для обновления параметров модели.
+     *
+     * @param config Объект конфигурации, содержащий список моделей и текущую модель.
+     */
+    function applyConfig(config: any) {
+        if (config && config.gptModelsList) {
+            gptModelOptions = Object.entries(config.gptModelsList).map(([id, name]) => ({
+                id,
+                name: typeof name === 'string' ? name : 'неизвестная модель',
+            }));
+            isDropdownDisabled = gptModelOptions.length === 0;
+
+            if (!isDropdownDisabled) {
+                currentGptModel = config.currentGptModel || gptModelOptions[0].id;
+            } else {
+                gptModelOptions = [{ id: null, name: 'нет модели' }];
+                currentGptModel = null;
+            }
+        } else {
+            gptModelOptions = [{ id: null, name: 'нет модели' }];
+            currentGptModel = null;
+            isDropdownDisabled = true;
+        }
+    }
+
+    /**
+     * Обрабатывает нажатие клавиши Enter в поле ввода.
+     * Если нажата клавиша Enter и выбрана модель, отправляет сообщение.
+     *
+     * @param event Событие нажатия клавиши.
+     */
     function handleKeyPress(event: KeyboardEvent) {
-        if (event.key === 'Enter') {
+        if (event.key === 'Enter' && currentGptModel !== null) {
             sendMessage();
         }
     }
 
-    // Метод, который запускается при первом открытии окна с компонентом
+    /**
+     * Метод, который запускается при первом открытии окна с компонентом.
+     * Отправляет начальное сообщение на сервер для установления соединения.
+     */
     async function onComponentMount() {
-        const data = await fetchMessageFromServer('@handshake');
-        addMessage('bot', data.reply);
+        await fetchMessageFromServer('@handshake', currentGptModel);
     }
 
     // Вызов метода при монтировании компонента
@@ -103,6 +164,10 @@
         border: 1px solid #ccc;
         border-radius: 4px;
     }
+    input[type="text"]:disabled {
+        background-color: #f0f0f0;
+        color: #999;
+    }
     button {
         margin-left: 5px;
         padding: 5px 10px;
@@ -112,6 +177,13 @@
         color: white;
         cursor: pointer;
     }
+    button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+    }
+    .dropdown {
+        margin-left: 5px;
+    }
 </style>
 
 <div>
@@ -119,10 +191,25 @@
         {#each messages as { type, text } }
             <div class="message {type}">{text}</div>
         {/each}
+        {#if isTyping}
+            <TypingAnimation />
+        {/if}
     </div>
 
     <div class="input-container">
-        <input type="text" bind:value={message} placeholder="Введите сообщение..." on:keypress={handleKeyPress} />
-        <button on:click={sendMessage}>Отправить</button>
+        <input 
+            type="text" 
+            bind:value={message} 
+            placeholder={isDropdownDisabled ? "Ввод сообщения заблокирован. Обновите страницу!" : "Введите сообщение..."} 
+            on:keypress={handleKeyPress} 
+            disabled={isDropdownDisabled}
+        />
+        <select bind:value={currentGptModel} class="dropdown" disabled={isDropdownDisabled}>
+            {#each gptModelOptions as { id, name } }
+                <option value={id}>{name}</option>
+            {/each}
+        </select>
+        <button on:click={sendMessage} disabled={currentGptModel === null}>Отправить</button>
+        <button on:click={clearContext} disabled={currentGptModel === null}>Забыть контекст</button>
     </div>
 </div>

@@ -27,7 +27,10 @@ class RouteConfigurator
         // Изменяем маршрут для phpinfo
         $app->get('/phpinfo', [InfoController::class, 'phpInfo']);
 
-        // Добавляем маршрут для chat_bot
-        $app->post('/chat_bot', [ChatBotController::class, 'handlePost']);
+        // Добавляем маршрут для обработки сообщений пользователя chat_bot
+        $app->post('/chat_bot', [ChatBotController::class, 'handlePostMessage']);
+
+        // Добавляем маршрут для обработки сообщений пользователя chat_bot
+        $app->get('/chat_bot/get_config', [ChatBotController::class, 'handleGetConfig']);
     }
 }
