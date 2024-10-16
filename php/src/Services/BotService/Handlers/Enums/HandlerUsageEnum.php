@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\IntelligentBotService\Handlers\Enums;
+namespace App\Services\BotService\Handlers\Enums;
 
 use App\Interfaces\NamedEnumInterface;
 use App\Traits\EnumTrait;

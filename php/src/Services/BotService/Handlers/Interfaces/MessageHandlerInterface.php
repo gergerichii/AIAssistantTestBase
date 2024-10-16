@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Services\IntelligentBotService\Handlers\Interfaces;
+namespace App\Services\BotService\Handlers\Interfaces;
 
-use App\Services\IntelligentBotService\Dto\RequestDto;
-use App\Services\IntelligentBotService\Dto\ResponseDto;
-use App\Services\IntelligentBotService\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Dto\RequestDto;
+use App\Services\BotService\Dto\ResponseDto;
+use App\Services\BotService\Handlers\Enums\HandlerUsageEnum;
 
 /**
  * Interface HandlerInterface
@@ -34,5 +34,5 @@ interface MessageHandlerInterface
      *
      * @return HandlerUsageEnum Признак использования обработчика.
      */
-    public function getHandlerUsage(): HandlerUsageEnum;
+    public static function getHandlerUsage(): HandlerUsageEnum;
 }

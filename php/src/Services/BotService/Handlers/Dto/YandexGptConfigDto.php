@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\IntelligentBotService\Handlers\Dto;
+namespace App\Services\BotService\Handlers\Dto;
 
 use App\Services\StoredConfig\Interfaces\ConfigDtoInterface;
 

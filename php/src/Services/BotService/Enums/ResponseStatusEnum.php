@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\IntelligentBotService\Enums;
+namespace App\Services\BotService\Enums;
 
 use App\Interfaces\NamedEnumInterface;
 use App\Traits\EnumTrait;
@@ -18,6 +18,7 @@ enum ResponseStatusEnum: string implements NamedEnumInterface
     case FINAL = 'final';
     case INTERMEDIATE = 'intermediate';
     case NO_ANSWER = 'no_answer';
+    case INTERMEDIATE_HANDLE_RESUME = 'intermediate_handle_resume';
 
     /**
      * Возвращает название для конкретного статуса.
@@ -30,6 +31,7 @@ enum ResponseStatusEnum: string implements NamedEnumInterface
             self::FINAL => 'Окончательный',
             self::INTERMEDIATE => 'Промежуточный',
             self::NO_ANSWER => 'Нет ответа',
+            self::INTERMEDIATE_HANDLE_RESUME => 'Промежуточный, требуется обработка и повторная отправка',
         };
     }
 }

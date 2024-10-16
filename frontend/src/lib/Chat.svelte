@@ -6,22 +6,26 @@
 
     let message: string = '';
     let messages: Array<{ type: string; text: string }> = [];
-    let currentGptModel: string | null = null; // Значение по умолчанию для выпадающего списка
+    let currentBotConfig: string | null = null; // Значение по умолчанию для выпадающего списка
     let gptModelOptions: Array<{ id: string | null; name: string }> = [{ id: null, name: 'нет модели' }];
     let isDropdownDisabled: boolean = true;
     let isTyping: boolean = false; // Флаг для отображения анимации
+    let isRequestPending: boolean = false; // Флаг для предотвращения двойного клика
 
     /**
      * Отправляет сообщение на сервер и обрабатывает ответ.
      * Если сообщение не пустое и выбрана модель, добавляет его в список сообщений и отправляет на сервер.
      */
     async function sendMessage() {
-        if (message.trim() !== '' && currentGptModel !== null) {
+        if (message.trim() !== '' && currentBotConfig !== null && !isRequestPending) {
+            isRequestPending = true; // Устанавливаем флаг, чтобы предотвратить повторный запрос
+
             // Отображение сообщения пользователя
             addMessage('user', message);
 
-            await fetchMessageFromServer(message, currentGptModel);
+            await fetchMessageFromServer(message, currentBotConfig);
             message = '';
+            isRequestPending = false; // Сбрасываем флаг после завершения запроса
         }
     }
 
@@ -29,8 +33,13 @@
      * Очищает чат и отправляет сообщение @clearContext на сервер.
      */
     async function clearContext() {
-        messages = [];
-        await fetchMessageFromServer('@clearContext', currentGptModel);
+        if (!isRequestPending) {
+            isRequestPending = true; // Устанавливаем флаг, чтобы предотвратить повторный запрос
+
+            messages = [];
+            await fetchMessageFromServer('@clearContext', currentBotConfig);
+            isRequestPending = false; // Сбрасываем флаг после завершения запроса
+        }
     }
 
     /**
@@ -49,7 +58,7 @@
      * @param msg Сообщение для отправки.
      * @param model Текущая модель, используемая для обработки сообщения.
      */
-    async function fetchMessageFromServer(msg: string, currentGptModel: string | null) {
+    async function fetchMessageFromServer(msg: string, currentBotConfig: string | null) {
         isTyping = true;
         
         const response = await fetch(API_URL, {
@@ -57,7 +66,7 @@
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ message: msg, currentGptModel: currentGptModel }),
+            body: JSON.stringify({ message: msg, currentBotConfig: currentBotConfig }),
         });
 
         isTyping = false; // Отключаем анимацию после получения ответа
@@ -86,14 +95,14 @@
             isDropdownDisabled = gptModelOptions.length === 0;
 
             if (!isDropdownDisabled) {
-                currentGptModel = config.currentGptModel || gptModelOptions[0].id;
+                currentBotConfig = config.currentBotConfig || gptModelOptions[0].id;
             } else {
                 gptModelOptions = [{ id: null, name: 'нет модели' }];
-                currentGptModel = null;
+                currentBotConfig = null;
             }
         } else {
             gptModelOptions = [{ id: null, name: 'нет модели' }];
-            currentGptModel = null;
+            currentBotConfig = null;
             isDropdownDisabled = true;
         }
     }
@@ -105,7 +114,7 @@
      * @param event Событие нажатия клавиши.
      */
     function handleKeyPress(event: KeyboardEvent) {
-        if (event.key === 'Enter' && currentGptModel !== null) {
+        if (event.key === 'Enter' && currentBotConfig !== null && !isRequestPending) {
             sendMessage();
         }
     }
@@ -115,7 +124,7 @@
      * Отправляет начальное сообщение на сервер для установления соединения.
      */
     async function onComponentMount() {
-        await fetchMessageFromServer('@handshake', currentGptModel);
+        await fetchMessageFromServer('@handshake', currentBotConfig);
     }
 
     // Вызов метода при монтировании компонента
@@ -204,12 +213,12 @@
             on:keypress={handleKeyPress} 
             disabled={isDropdownDisabled}
         />
-        <select bind:value={currentGptModel} class="dropdown" disabled={isDropdownDisabled}>
+        <select bind:value={currentBotConfig} class="dropdown" disabled={isDropdownDisabled}>
             {#each gptModelOptions as { id, name } }
                 <option value={id}>{name}</option>
             {/each}
         </select>
-        <button on:click={sendMessage} disabled={currentGptModel === null}>Отправить</button>
-        <button on:click={clearContext} disabled={currentGptModel === null}>Забыть контекст</button>
+        <button on:click={sendMessage} disabled={currentBotConfig === null || isRequestPending}>Отправить</button>
+        <button on:click={clearContext} disabled={currentBotConfig === null || isRequestPending}>Забыть контекст</button>
     </div>
 </div>

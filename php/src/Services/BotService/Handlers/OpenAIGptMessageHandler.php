@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace App\Services\IntelligentBotService\Handlers;
+namespace App\Services\BotService\Handlers;
 
-use App\Services\IntelligentBotService\Dto\RequestDto;
-use App\Services\IntelligentBotService\Dto\ResponseDto;
-use App\Services\IntelligentBotService\Enums\ResponseStatusEnum;
-use App\Services\IntelligentBotService\Handlers\Dto\YandexGptConfigDto;
-use App\Services\IntelligentBotService\Handlers\Interfaces\MessageHandlerInterface;
-use App\Services\IntelligentBotService\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Dto\RequestDto;
+use App\Services\BotService\Dto\ResponseDto;
+use App\Services\BotService\Enums\ResponseStatusEnum;
+use App\Services\BotService\Handlers\Dto\OpenAIGptConfigDto;
+use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
+use App\Services\BotService\Handlers\Enums\HandlerUsageEnum;
 
 /**
- * Class YandexGptMessageHandler
- * Реализация интерфейса MessageHandlerInterface для обработки API ответов Yandex GPT.
+ * Class YandexGptHandler
+ * Реализация интерфейса HandlerInterface для обработки API ответов Yandex GPT.
  */
-readonly class YandexGptMessageHandler implements MessageHandlerInterface
+readonly class OpenAIGptMessageHandler implements MessageHandlerInterface
 {
     /**
-     * Конструктор класса YandexGptMessageHandler.
+     * Конструктор класса OpenAIGptMessageHandler.
      *
-     * @param YandexGptConfigDto $config Настройки по умолчанию.
+     * @param OpenAIGptConfigDto $config Настройки по умолчанию.
      */
     public function __construct(
-        private YandexGptConfigDto $config,
+        private OpenAIGptConfigDto $config,
     ) {
     }
 
@@ -37,7 +37,7 @@ readonly class YandexGptMessageHandler implements MessageHandlerInterface
     {
         //TODO Реализовать обработку запроса
         return new ResponseDto(
-            result: 'Ответ от Yandex GPT',
+            result: 'Ответ от OpenAI GPT пока не реализован',
             context: [...$request->context, $request->message],
             status: ResponseStatusEnum::FINAL
         );
@@ -58,7 +58,7 @@ readonly class YandexGptMessageHandler implements MessageHandlerInterface
      *
      * @return HandlerUsageEnum Признак использования обработчика.
      */
-    public function getHandlerUsage(): HandlerUsageEnum
+    public static function getHandlerUsage(): HandlerUsageEnum
     {
         return HandlerUsageEnum::PAID_MODEL_GPT;
     }

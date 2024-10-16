@@ -58,12 +58,24 @@ class JsonConfigStorage implements ConfigStorageInterface
             return new ConfigDtoCollection([]);
         }
 
-        $data = json_decode(file_get_contents($filePath), true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $data = json_decode(file_get_contents($filePath), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            unlink($filePath);
+
+            return new ConfigDtoCollection([]);
+        }
 
         // Преобразование массива данных в коллекцию DTO
         $configs = [];
-        foreach ($data as $key => $item) {
-            $configs[$key] = new $item['class'](...$item['data']);
+        try {
+            foreach ($data as $key => $item) {
+                $configs[$key] = new $item['class'](...$item['data']);
+            }
+        } catch (\Throwable $e) {
+            unlink($filePath);
+
+            return new ConfigDtoCollection([]);
         }
 
         return new ConfigDtoCollection($configs);
