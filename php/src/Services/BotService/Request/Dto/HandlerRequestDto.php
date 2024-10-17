@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Dto;
+namespace App\Services\BotService\Request\Dto;
 
 use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
 
 /**
- * Class RequestDto
+ * Class HandlerRequestDto
  * DTO для представления запроса.
  */
-readonly class RequestDto
+readonly class HandlerRequestDto
 {
     /**
      * @param string $message Сообщение запроса.

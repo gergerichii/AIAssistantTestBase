@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\BotService\Request;
 
-use App\Services\BotService\Dto\RequestDto;
-use App\Services\BotService\Dto\ResponseDto;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
+use App\Services\BotService\Request\Dto\HandlerRequestDto;
+use App\Services\BotService\Request\Dto\HandlerResponseDto;
 use App\Services\BotService\Request\Enums\HandlerResponseStatusEnum;
 use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
-use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
+use App\Services\BotService\Request\Interfaces\HandlerInterface;
 use Throwable;
 
 /**
@@ -19,7 +19,7 @@ use Throwable;
 class HandlerPipeline
 {
     /**
-     * @var RequestHandlerInterface[] $handlers Массив обработчиков.
+     * @var HandlerInterface[] $handlers Массив обработчиков.
      */
     private array $handlers;
 
@@ -31,7 +31,7 @@ class HandlerPipeline
     /**
      * Конструктор класса HandlerPipeline.
      *
-     * @param RequestHandlerInterface[] $handlers Список обработчиков, которые нужно
+     * @param HandlerInterface[] $handlers Список обработчиков, которые нужно
      * зарегистрировать в конвейере.
      * @param GptContextManager|null $contextManager Менеджер контекста GPT.
      */
@@ -46,11 +46,11 @@ class HandlerPipeline
     /**
      * Обрабатывает запрос, проходя через конвейер обработчиков.
      *
-     * @param RequestDto $userRequest Запрос для обработки.
-     * @return ResponseDto Окончательный или промежуточный ответ, если
+     * @param HandlerRequestDto $userRequest Запрос для обработки.
+     * @return HandlerResponseDto Окончательный или промежуточный ответ, если
      * окончательного нет.
      */
-    public function process(RequestDto $userRequest): ResponseDto
+    public function process(HandlerRequestDto $userRequest): HandlerResponseDto
     {
         // Проверяем, нужно ли сортировать обработчики
         if ($this->needsSorting) {
@@ -65,7 +65,7 @@ class HandlerPipeline
             $addContext = $this->addUserMessageToContext($addContext, $userRequest->message);
         }
 
-        $request = new RequestDto(
+        $request = new HandlerRequestDto(
             message: $userRequest->message,
             context: $context,
             isFirstMessage: $userRequest->isFirstMessage,
@@ -87,9 +87,9 @@ class HandlerPipeline
     /**
      * Добавляет новый обработчик в конвейер.
      *
-     * @param RequestHandlerInterface $handler Обработчик для добавления.
+     * @param HandlerInterface $handler Обработчик для добавления.
      */
-    public function addHandler(RequestHandlerInterface $handler): void
+    public function addHandler(HandlerInterface $handler): void
     {
         $this->handlers[] = $handler;
         $this->needsSorting = true;
@@ -98,9 +98,9 @@ class HandlerPipeline
     /**
      * Удаляет обработчик из конвейера.
      *
-     * @param RequestHandlerInterface $handler Обработчик для удаления.
+     * @param HandlerInterface $handler Обработчик для удаления.
      */
-    public function removeHandler(RequestHandlerInterface $handler): void
+    public function removeHandler(HandlerInterface $handler): void
     {
         $this->handlers = array_filter(
             $this->handlers,
@@ -114,20 +114,20 @@ class HandlerPipeline
     /**
      * Обрабатывает запрос с помощью обработчика.
      *
-     * @param RequestHandlerInterface $handler Обработчик.
-     * @param RequestDto $request Запрос.
-     * @param RequestDto $userRequest Исходный запрос пользователя.
+     * @param HandlerInterface $handler Обработчик.
+     * @param HandlerRequestDto $request Запрос.
+     * @param HandlerRequestDto $userRequest Исходный запрос пользователя.
      * @param array $context Общий Контекст запроса.
      * @param array $addContext Контекст который формируется во время обработки сообщения.
-     * @return ResponseDto Ответ обработчика.
+     * @return HandlerResponseDto Ответ обработчика.
      */
     private function handleRequest(
-        RequestHandlerInterface $handler,
-        RequestDto &$request,
-        RequestDto $userRequest,
+        HandlerInterface $handler,
+        HandlerRequestDto &$request,
+        HandlerRequestDto $userRequest,
         array &$context,
         array &$addContext
-    ): ResponseDto {
+    ): HandlerResponseDto {
         do {
             try {
                 $response = $handler->handle($request, $userRequest);
@@ -158,7 +158,7 @@ class HandlerPipeline
             }
         } while ($response->status === HandlerResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME);
 
-        return new ResponseDto(
+        return new HandlerResponseDto(
             result: $result,
             addToContext: [],
             status: $response->status,
@@ -168,10 +168,10 @@ class HandlerPipeline
     /**
      * Проверяет, является ли ответ окончательным.
      *
-     * @param ResponseDto $response Ответ для проверки.
+     * @param HandlerResponseDto $response Ответ для проверки.
      * @return bool True, если ответ окончательный.
      */
-    private function isFinalResponse(ResponseDto $response): bool
+    private function isFinalResponse(HandlerResponseDto $response): bool
     {
         return in_array($response->status, [
             HandlerResponseStatusEnum::FINAL,
@@ -183,10 +183,10 @@ class HandlerPipeline
     /**
      * Проверяет, является ли ответ промежуточным.
      *
-     * @param ResponseDto $response Ответ для проверки.
+     * @param HandlerResponseDto $response Ответ для проверки.
      * @return bool True, если ответ промежуточный.
      */
-    private function isIntermediateResponse(ResponseDto $response): bool
+    private function isIntermediateResponse(HandlerResponseDto $response): bool
     {
         return in_array(
             $response->status,
@@ -206,7 +206,7 @@ class HandlerPipeline
     {
         usort(
             $this->handlers,
-            static function (RequestHandlerInterface $a, RequestHandlerInterface $b) {
+            static function (HandlerInterface $a, HandlerInterface $b) {
                 return $a->getPriority() <=> $b->getPriority();
             }
         );
@@ -236,11 +236,11 @@ class HandlerPipeline
      *
      * @param string $result Результат предыдущего обработчика.
      * @param array $context Контекст обработки.
-     * @return RequestDto Промежуточный запрос.
+     * @return HandlerRequestDto Промежуточный запрос.
      */
-    private function createIntermediateRequest(string $result, $isFirstMessage, array &$context): RequestDto
+    private function createIntermediateRequest(string $result, $isFirstMessage, array &$context): HandlerRequestDto
     {
-        return new RequestDto(
+        return new HandlerRequestDto(
             message: $result,
             context: $context,
             isFirstMessage: $isFirstMessage,
@@ -250,11 +250,11 @@ class HandlerPipeline
     /**
      * Создает ответ "Нет ответа".
      *
-     * @return ResponseDto Ответ "Нет ответа".
+     * @return HandlerResponseDto Ответ "Нет ответа".
      */
-    private function createNoAnswerResponse(): ResponseDto
+    private function createNoAnswerResponse(): HandlerResponseDto
     {
-        return new ResponseDto(
+        return new HandlerResponseDto(
             result: 'Нет ответа. Повторите попытку позже',
             addToContext: [],
             status: HandlerResponseStatusEnum::NO_ANSWER,
@@ -265,11 +265,11 @@ class HandlerPipeline
      * Создает ответ с ошибкой.
      *
      * @param string $result Результат обработки.
-     * @return ResponseDto Ответ с ошибкой.
+     * @return HandlerResponseDto Ответ с ошибкой.
      */
-    private function createErrorResponse(string $result): ResponseDto
+    private function createErrorResponse(string $result): HandlerResponseDto
     {
-        return new ResponseDto(
+        return new HandlerResponseDto(
             result: $result,
             addToContext: [],
             status: HandlerResponseStatusEnum::ERROR,

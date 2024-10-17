@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace App\Services\BotService\Request\Interfaces;
 
-use App\Services\BotService\Dto\RequestDto;
-use App\Services\BotService\Dto\ResponseDto;
+use App\Services\BotService\Request\Dto\HandlerRequestDto;
+use App\Services\BotService\Request\Dto\HandlerResponseDto;
 use App\Services\BotService\Request\Handlers\Enums\HandlerUsageEnum;
 
 /**
  * Interface HandlerInterface
  * Определяет методы для обработки запросов и управления приоритетами обработчиков.
  */
-interface RequestHandlerInterface
+interface HandlerInterface
 {
     /**
      * Обрабатывает запрос и возвращает ответ.
      *
-     * @param RequestDto $request Запрос для обработки.
-     * @param RequestDto $userRequest Исходный запрос, поступивший на вход конвейера.
-     * @return ResponseDto Ответ после обработки запроса.
+     * @param HandlerRequestDto $request Запрос для обработки.
+     * @param HandlerRequestDto $userRequest Исходный запрос, поступивший на вход конвейера.
+     * @return HandlerResponseDto Ответ после обработки запроса.
      */
-    public function handle(RequestDto $request, RequestDto $userRequest): ResponseDto;
+    public function handle(HandlerRequestDto $request, HandlerRequestDto $userRequest): HandlerResponseDto;
 
     /**
      * Возвращает приоритет обработчика.

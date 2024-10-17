@@ -6,8 +6,8 @@ namespace App\Controllers;
 
 use App\Dto\ChatConfigDto;
 use App\Services\BotService\BotService;
-use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
+use App\Services\BotService\Request\Dto\HandlerRequestDto;
 use App\Services\StoredConfig\ConfigManager;
 use App\Services\StoredConfig\Storages\JsonConfigStorage;
 use JsonException;
@@ -56,7 +56,7 @@ class ChatBotController
 
         $isFirstMessage = $userMessage === '@handshake';
 
-        $requestDto = new RequestDto(
+        $requestDto = new HandlerRequestDto(
             message: $isFirstMessage ? '' : $userMessage,
             context: [],
             isFirstMessage: $isFirstMessage,
@@ -78,8 +78,6 @@ class ChatBotController
                 JSON_THROW_ON_ERROR
             )
         );
-
-        sleep(2);
 
         return $response->withHeader('Content-Type', 'application/json');
     }

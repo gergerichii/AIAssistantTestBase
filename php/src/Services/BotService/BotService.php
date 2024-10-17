@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services\BotService;
 
 use App\Services\BotService\Dto\BotConfigDto;
-use App\Services\BotService\Dto\RequestDto;
-use App\Services\BotService\Dto\ResponseDto;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
-use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
-use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
+use App\Services\BotService\Request\Dto\HandlerRequestDto;
+use App\Services\BotService\Request\Dto\HandlerResponseDto;
 use App\Services\BotService\Request\HandlerPipeline;
+use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Interfaces\HandlerInterface;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;
@@ -59,10 +59,10 @@ class BotService
     /**
      * Обрабатывает запрос к боту.
      *
-     * @param RequestDto $request Запрос к боту.
-     * @return ResponseDto Ответ от бота.
+     * @param HandlerRequestDto $request Запрос к боту.
+     * @return HandlerResponseDto Ответ от бота.
      */
-    public function processRequest(RequestDto $request): ResponseDto
+    public function processRequest(HandlerRequestDto $request): HandlerResponseDto
     {
         return $this->handlerPipeline->process(userRequest: $request);
     }
@@ -161,9 +161,9 @@ class BotService
             $handlerClass = $handlerConfig->class;
             $handlerInstance = new $handlerClass($handlerConfig->config);
 
-            if (!$handlerInstance instanceof RequestHandlerInterface) {
+            if (!$handlerInstance instanceof HandlerInterface) {
                 throw new InvalidArgumentException(
-                    'Handler must implement ' . RequestHandlerInterface::class
+                    'Handler must implement ' . HandlerInterface::class
                 );
             }
 

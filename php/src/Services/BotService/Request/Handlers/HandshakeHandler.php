@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Services\BotService\Request\Handlers;
 
-use App\Services\BotService\Dto\RequestDto;
-use App\Services\BotService\Dto\ResponseDto;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
+use App\Services\BotService\Request\Dto\HandlerRequestDto;
+use App\Services\BotService\Request\Dto\HandlerResponseDto;
 use App\Services\BotService\Request\Enums\HandlerResponseStatusEnum;
 use App\Services\BotService\Request\Handlers\Dto\FirstMessageConfigDto;
 use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Request\Handlers\Enums\HandlerUsageEnum;
-use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
+use App\Services\BotService\Request\Interfaces\HandlerInterface;
 
 /**
  * Class HandshakeHandler
- * Реализация интерфейса RequestHandlerInterface для обработки первого сообщения.
+ * Реализация интерфейса HandlerInterface для обработки первого сообщения.
  */
-class HandshakeHandler implements RequestHandlerInterface
+class HandshakeHandler implements HandlerInterface
 {
     /**
      * @var int Приоритет обработчика.
@@ -37,13 +37,13 @@ class HandshakeHandler implements RequestHandlerInterface
     /**
      * Обрабатывает запрос и возвращает ответ.
      *
-     * @param RequestDto $request Запрос для обработки.
-     * @param RequestDto $userRequest Исходный запрос, поступивший на вход конвейера.
-     * @return ResponseDto Ответ после обработки запроса.
+     * @param HandlerRequestDto $request Запрос для обработки.
+     * @param HandlerRequestDto $userRequest Исходный запрос, поступивший на вход конвейера.
+     * @return HandlerResponseDto Ответ после обработки запроса.
      */
-    public function handle(RequestDto $request, RequestDto $userRequest): ResponseDto
+    public function handle(HandlerRequestDto $request, HandlerRequestDto $userRequest): HandlerResponseDto
     {
-        return new ResponseDto(
+        return new HandlerResponseDto(
             result: $request->isFirstMessage ? $this->config->welcomeMessage : '',
             addToContext: $request->isFirstMessage ?[GptContextManager::createContextItem(
                 role: GptRolesEnum::USER,

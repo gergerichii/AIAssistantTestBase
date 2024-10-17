@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Dto;
+namespace App\Services\BotService\Request\Dto;
 
 use App\Services\BotService\Request\Enums\HandlerResponseStatusEnum;
 use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
 
 /**
- * Class ResponseDto
+ * Class HandlerResponseDto
  * DTO для представления ответа.
  */
-readonly class ResponseDto
+readonly class HandlerResponseDto
 {
     /**
      * @param string $result Результат обработки запроса.
