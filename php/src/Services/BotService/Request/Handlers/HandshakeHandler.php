@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Handlers;
+namespace App\Services\BotService\Request\Handlers;
 
 use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Dto\ResponseDto;
-use App\Services\BotService\Enums\ResponseStatusEnum;
-use App\Services\BotService\Handlers\Dto\FirstMessageConfigDto;
-use App\Services\BotService\Handlers\Enums\GptRolesEnum;
-use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
-use App\Services\BotService\Handlers\Enums\HandlerUsageEnum;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
+use App\Services\BotService\Request\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Request\Handlers\Dto\FirstMessageConfigDto;
+use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
 
 /**
- * Class FirstMessageHandler
- * Реализация интерфейса MessageHandlerInterface для обработки первого сообщения.
+ * Class HandshakeHandler
+ * Реализация интерфейса RequestHandlerInterface для обработки первого сообщения.
  */
-class FirstMessageHandler implements MessageHandlerInterface
+class HandshakeHandler implements RequestHandlerInterface
 {
     /**
      * @var int Приоритет обработчика.
@@ -25,7 +25,7 @@ class FirstMessageHandler implements MessageHandlerInterface
     private int $priority = 0;
 
     /**
-     * Конструктор класса FirstMessageHandler.
+     * Конструктор класса HandshakeHandler.
      *
      * @param FirstMessageConfigDto $config Настройки по умолчанию.
      */
@@ -49,7 +49,7 @@ class FirstMessageHandler implements MessageHandlerInterface
                 role: GptRolesEnum::USER,
                 text: 'bot: Поздоровайся с клиентом первый!'
             )] : [],
-            status: $request->isFirstMessage ? $this->config->handlerResponseStatus : ResponseStatusEnum::SKIPPED,
+            status: $request->isFirstMessage ? $this->config->handlerResponseStatus : HandlerResponseStatusEnum::SKIPPED,
         );
     }
 

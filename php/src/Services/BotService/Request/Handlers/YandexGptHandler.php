@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Handlers;
+namespace App\Services\BotService\Request\Handlers;
 
 use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Dto\ResponseDto;
-use App\Services\BotService\Enums\ResponseStatusEnum;
-use App\Services\BotService\Handlers\Dto\YandexGptConfigDto;
-use App\Services\BotService\Handlers\Enums\GptRolesEnum;
-use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
-use App\Services\BotService\Handlers\Enums\HandlerUsageEnum;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
+use App\Services\BotService\Request\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Request\Handlers\Dto\YandexGptConfigDto;
+use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use JsonException;
 
 /**
- * Class YandexGptMessageHandler
- * Реализация интерфейса MessageHandlerInterface для обработки API ответов Yandex GPT.
+ * Class YandexGptHandler
+ * Реализация интерфейса RequestHandlerInterface для обработки API ответов Yandex GPT.
  */
-class YandexGptMessageHandler implements MessageHandlerInterface
+class YandexGptHandler implements RequestHandlerInterface
 {
     /**
      * @var int Приоритет обработчика.
@@ -33,7 +33,7 @@ class YandexGptMessageHandler implements MessageHandlerInterface
     private ?Client $httpClient;
 
     /**
-     * Конструктор класса YandexGptMessageHandler.
+     * Конструктор класса YandexGptHandler.
      *
      * @param YandexGptConfigDto $config Настройки по умолчанию.
      * @param Client|null $httpClient HTTP клиент для выполнения запросов.
@@ -96,13 +96,13 @@ class YandexGptMessageHandler implements MessageHandlerInterface
             return new ResponseDto(
                 result: $message,
                 addToContext: [],
-                status: ResponseStatusEnum::FINAL
+                status: HandlerResponseStatusEnum::FINAL
             );
         } catch (GuzzleException $e) {
             return new ResponseDto(
                 result: 'Ошибка: ' . $e->getMessage(),
                 addToContext: [],
-                status: ResponseStatusEnum::ERROR
+                status: HandlerResponseStatusEnum::ERROR
             );
         }
     }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\BotService\Dto;
 
-use App\Services\BotService\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
 
 /**
  * Class RequestDto

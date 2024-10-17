@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\BotService\Helpers\GptContextManager;
 
-use App\Services\BotService\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
 use JsonException;
 
 /**

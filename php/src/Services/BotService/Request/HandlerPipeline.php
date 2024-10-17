@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Pipeline;
+namespace App\Services\BotService\Request;
 
 use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Dto\ResponseDto;
-use App\Services\BotService\Enums\ResponseStatusEnum;
-use App\Services\BotService\Handlers\Enums\GptRolesEnum;
-use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
+use App\Services\BotService\Request\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
 use Throwable;
 
 /**
@@ -19,7 +19,7 @@ use Throwable;
 class HandlerPipeline
 {
     /**
-     * @var MessageHandlerInterface[] $handlers Массив обработчиков.
+     * @var RequestHandlerInterface[] $handlers Массив обработчиков.
      */
     private array $handlers;
 
@@ -31,7 +31,7 @@ class HandlerPipeline
     /**
      * Конструктор класса HandlerPipeline.
      *
-     * @param MessageHandlerInterface[] $handlers Список обработчиков, которые нужно
+     * @param RequestHandlerInterface[] $handlers Список обработчиков, которые нужно
      * зарегистрировать в конвейере.
      * @param GptContextManager|null $contextManager Менеджер контекста GPT.
      */
@@ -87,9 +87,9 @@ class HandlerPipeline
     /**
      * Добавляет новый обработчик в конвейер.
      *
-     * @param MessageHandlerInterface $handler Обработчик для добавления.
+     * @param RequestHandlerInterface $handler Обработчик для добавления.
      */
-    public function addHandler(MessageHandlerInterface $handler): void
+    public function addHandler(RequestHandlerInterface $handler): void
     {
         $this->handlers[] = $handler;
         $this->needsSorting = true;
@@ -98,9 +98,9 @@ class HandlerPipeline
     /**
      * Удаляет обработчик из конвейера.
      *
-     * @param MessageHandlerInterface $handler Обработчик для удаления.
+     * @param RequestHandlerInterface $handler Обработчик для удаления.
      */
-    public function removeHandler(MessageHandlerInterface $handler): void
+    public function removeHandler(RequestHandlerInterface $handler): void
     {
         $this->handlers = array_filter(
             $this->handlers,
@@ -114,7 +114,7 @@ class HandlerPipeline
     /**
      * Обрабатывает запрос с помощью обработчика.
      *
-     * @param MessageHandlerInterface $handler Обработчик.
+     * @param RequestHandlerInterface $handler Обработчик.
      * @param RequestDto $request Запрос.
      * @param RequestDto $userRequest Исходный запрос пользователя.
      * @param array $context Общий Контекст запроса.
@@ -122,7 +122,7 @@ class HandlerPipeline
      * @return ResponseDto Ответ обработчика.
      */
     private function handleRequest(
-        MessageHandlerInterface $handler,
+        RequestHandlerInterface $handler,
         RequestDto &$request,
         RequestDto $userRequest,
         array &$context,
@@ -135,7 +135,7 @@ class HandlerPipeline
                 return $this->createErrorResponse($exception->getMessage());
             }
 
-            $isSkipped = $response->status === ResponseStatusEnum::SKIPPED;
+            $isSkipped = $response->status === HandlerResponseStatusEnum::SKIPPED;
             $result = $isSkipped ? $request->message : $this->handleResponse($response->result);
 
             $isIntermediateResponse = $this->isIntermediateResponse($response);
@@ -156,7 +156,7 @@ class HandlerPipeline
                     context: $context
                 );
             }
-        } while ($response->status === ResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME);
+        } while ($response->status === HandlerResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME);
 
         return new ResponseDto(
             result: $result,
@@ -174,9 +174,9 @@ class HandlerPipeline
     private function isFinalResponse(ResponseDto $response): bool
     {
         return in_array($response->status, [
-            ResponseStatusEnum::FINAL,
-            ResponseStatusEnum::NO_ANSWER,
-            ResponseStatusEnum::ERROR,
+            HandlerResponseStatusEnum::FINAL,
+            HandlerResponseStatusEnum::NO_ANSWER,
+            HandlerResponseStatusEnum::ERROR,
         ], true);
     }
 
@@ -191,9 +191,9 @@ class HandlerPipeline
         return in_array(
             $response->status,
             [
-                ResponseStatusEnum::INTERMEDIATE,
-                ResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME,
-                ResponseStatusEnum::SKIPPED,
+                HandlerResponseStatusEnum::INTERMEDIATE,
+                HandlerResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME,
+                HandlerResponseStatusEnum::SKIPPED,
             ],
             true
         );
@@ -206,7 +206,7 @@ class HandlerPipeline
     {
         usort(
             $this->handlers,
-            static function (MessageHandlerInterface $a, MessageHandlerInterface $b) {
+            static function (RequestHandlerInterface $a, RequestHandlerInterface $b) {
                 return $a->getPriority() <=> $b->getPriority();
             }
         );
@@ -257,7 +257,7 @@ class HandlerPipeline
         return new ResponseDto(
             result: 'Нет ответа. Повторите попытку позже',
             addToContext: [],
-            status: ResponseStatusEnum::NO_ANSWER,
+            status: HandlerResponseStatusEnum::NO_ANSWER,
         );
     }
 
@@ -272,7 +272,7 @@ class HandlerPipeline
         return new ResponseDto(
             result: $result,
             addToContext: [],
-            status: ResponseStatusEnum::ERROR,
+            status: HandlerResponseStatusEnum::ERROR,
         );
     }
 

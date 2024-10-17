@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Handlers;
+namespace App\Services\BotService\Request\Handlers;
 
 use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Dto\ResponseDto;
-use App\Services\BotService\Enums\ResponseStatusEnum;
-use App\Services\BotService\Handlers\Dto\OpenAIGptConfigDto;
-use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
-use App\Services\BotService\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Request\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Request\Handlers\Dto\OpenAIGptConfigDto;
+use App\Services\BotService\Request\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
 
 /**
- * Class OpenAIGptMessageHandler
+ * Class OpenAIGptHandler
  * Реализация интерфейса HandlerInterface для обработки API ответов OpenAI GPT.
  */
-class OpenAIGptMessageHandler implements MessageHandlerInterface
+class OpenAIGptHandler implements RequestHandlerInterface
 {
     /**
      * @var int Приоритет обработчика.
@@ -23,7 +23,7 @@ class OpenAIGptMessageHandler implements MessageHandlerInterface
     private int $priority = 0;
 
     /**
-     * Конструктор класса OpenAIGptMessageHandler.
+     * Конструктор класса OpenAIGptHandler.
      *
      * @param OpenAIGptConfigDto $config Настройки по умолчанию.
      */
@@ -45,7 +45,7 @@ class OpenAIGptMessageHandler implements MessageHandlerInterface
         return new ResponseDto(
             result: 'Ответ от OpenAI GPT пока не реализован',
             addToContext: [],
-            status: ResponseStatusEnum::FINAL
+            status: HandlerResponseStatusEnum::FINAL
         );
     }
 

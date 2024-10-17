@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Enums;
+namespace App\Services\BotService\Request\Enums;
 
 use App\Interfaces\NamedEnumInterface;
 use App\Traits\EnumTrait;
@@ -11,7 +11,7 @@ use App\Traits\EnumTrait;
  * Enum ResponseStatus
  * Определяет возможные статусы ответа.
  */
-enum ResponseStatusEnum: string implements NamedEnumInterface
+enum HandlerResponseStatusEnum: string implements NamedEnumInterface
 {
     use EnumTrait;
 

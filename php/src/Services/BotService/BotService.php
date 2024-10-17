@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\BotService;
 
+use App\Services\BotService\Dto\BotConfigDto;
 use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Dto\ResponseDto;
-use App\Services\BotService\Dto\BotConfigDto;
-use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
-use App\Services\BotService\Pipeline\HandlerPipeline;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
-use App\Services\BotService\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Request\Interfaces\RequestHandlerInterface;
+use App\Services\BotService\Request\HandlerPipeline;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;
@@ -161,9 +161,9 @@ class BotService
             $handlerClass = $handlerConfig->class;
             $handlerInstance = new $handlerClass($handlerConfig->config);
 
-            if (!$handlerInstance instanceof MessageHandlerInterface) {
+            if (!$handlerInstance instanceof RequestHandlerInterface) {
                 throw new InvalidArgumentException(
-                    'Handler must implement ' . MessageHandlerInterface::class
+                    'Handler must implement ' . RequestHandlerInterface::class
                 );
             }
 

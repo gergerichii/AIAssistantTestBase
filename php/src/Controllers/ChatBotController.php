@@ -7,7 +7,6 @@ namespace App\Controllers;
 use App\Dto\ChatConfigDto;
 use App\Services\BotService\BotService;
 use App\Services\BotService\Dto\RequestDto;
-use App\Services\BotService\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
 use App\Services\StoredConfig\ConfigManager;
 use App\Services\StoredConfig\Storages\JsonConfigStorage;

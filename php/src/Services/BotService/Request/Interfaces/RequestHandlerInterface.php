@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Services\BotService\Handlers\Interfaces;
+namespace App\Services\BotService\Request\Interfaces;
 
 use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Dto\ResponseDto;
-use App\Services\BotService\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Request\Handlers\Enums\HandlerUsageEnum;
 
 /**
  * Interface HandlerInterface
  * Определяет методы для обработки запросов и управления приоритетами обработчиков.
  */
-interface MessageHandlerInterface
+interface RequestHandlerInterface
 {
     /**
      * Обрабатывает запрос и возвращает ответ.
