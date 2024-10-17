@@ -18,9 +18,10 @@ interface MessageHandlerInterface
      * Обрабатывает запрос и возвращает ответ.
      *
      * @param RequestDto $request Запрос для обработки.
+     * @param RequestDto $userRequest Исходный запрос, поступивший на вход конвейера.
      * @return ResponseDto Ответ после обработки запроса.
      */
-    public function handle(RequestDto $request): ResponseDto;
+    public function handle(RequestDto $request, RequestDto $userRequest): ResponseDto;
 
     /**
      * Возвращает приоритет обработчика.
@@ -35,4 +36,11 @@ interface MessageHandlerInterface
      * @return HandlerUsageEnum Признак использования обработчика.
      */
     public static function getHandlerUsage(): HandlerUsageEnum;
+
+    /**
+     * Устанавливает приоритет обработчика.
+     *
+     * @param int $priority Приоритет обработчика.
+     */
+    public function setPriority(int $priority): void;
 }

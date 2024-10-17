@@ -53,22 +53,19 @@ class ChatBotController
             $userMessage = '@handshake';
         }
 
-        if ($userMessage === '@handshake') {
-            $botResponse = 'Здравствуйте! Меня зовут Василий! Я ваш личный менеджер. Какие у вас есть вопросы?';
-            $contextManager->addContextItem(GptRolesEnum::ASSISTANT, $botResponse);
-            sleep(4);
-        } else {
-            $botService = new BotService(self::BOT_NAME, $storedConfigDto->currentBotConfig, $contextManager);
+        $botService = new BotService(self::BOT_NAME, $storedConfigDto->currentBotConfig, $contextManager);
 
-            $requestDto = new RequestDto(
-                message: $userMessage,
-                context: [],
-            );
+        $isFirstMessage = $userMessage === '@handshake';
 
-            $botResponseResult = $botService->processRequest($requestDto);
+        $requestDto = new RequestDto(
+            message: $isFirstMessage ? '' : $userMessage,
+            context: [],
+            isFirstMessage: $isFirstMessage,
+        );
 
-            $botResponse = $botResponseResult->result;
-        }
+        $botResponseResult = $botService->processRequest($requestDto);
+
+        $botResponse = $botResponseResult->result;
 
         $response->getBody()->write(
             json_encode(
@@ -82,6 +79,8 @@ class ChatBotController
                 JSON_THROW_ON_ERROR
             )
         );
+
+        sleep(2);
 
         return $response->withHeader('Content-Type', 'application/json');
     }

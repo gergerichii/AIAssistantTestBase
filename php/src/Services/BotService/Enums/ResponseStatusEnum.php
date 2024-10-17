@@ -19,6 +19,8 @@ enum ResponseStatusEnum: string implements NamedEnumInterface
     case INTERMEDIATE = 'intermediate';
     case NO_ANSWER = 'no_answer';
     case INTERMEDIATE_HANDLE_RESUME = 'intermediate_handle_resume';
+    case ERROR = 'error';
+    case SKIPPED = 'skipped';
 
     /**
      * Возвращает название для конкретного статуса.
@@ -32,6 +34,8 @@ enum ResponseStatusEnum: string implements NamedEnumInterface
             self::INTERMEDIATE => 'Промежуточный',
             self::NO_ANSWER => 'Нет ответа',
             self::INTERMEDIATE_HANDLE_RESUME => 'Промежуточный, требуется обработка и повторная отправка',
+            self::ERROR => 'Ошибка',
+            self::SKIPPED => 'Пропущенный',
         };
     }
 }

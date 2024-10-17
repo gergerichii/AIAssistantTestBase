@@ -19,6 +19,7 @@ readonly class RequestDto
     public function __construct(
         public string $message,
         public array $context = [],
+        public bool $isFirstMessage = false,
     ) {
     }
 }

@@ -35,6 +35,8 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"@sveltejs/adapter-node": "^5.2.6"
+		"@sveltejs/adapter-node": "^5.2.6",
+		"dompurify": "^3.1.7",
+		"marked": "^14.1.3"
 	}
 }

@@ -8,7 +8,7 @@ use App\Services\BotService\Handlers\Enums\GptRolesEnum;
 use JsonException;
 
 /**
- * Class ContextManager
+ * Class GptContextManager
  * Менеджер для управления контекстом, сохраняемым в системной папке temp.
  */
 class GptContextManager
@@ -24,7 +24,7 @@ class GptContextManager
     private array $context;
 
     /**
-     * Конструктор класса ContextManager.
+     * Конструктор класса GptContextManager.
      *
      * @param string $contextId Идентификатор контекста.
      * @throws JsonException
@@ -68,11 +68,7 @@ class GptContextManager
      */
     public function addContextItem(GptRolesEnum $role, string $text, ?array $data = null): void
     {
-        $this->context[] = [
-            'role' => $role,
-            'text' => $text,
-            'data' => $data,
-        ];
+        $this->context[] = self::createContextItem(role: $role, text: $text, data: $data);
     }
 
     /**
@@ -130,11 +126,17 @@ class GptContextManager
         $filePath = $this->getFilePath();
         $data = json_encode(
             array_map(
-                fn($item) => [
-                    'role' => $item['role']->value,
-                    'text' => $item['text'],
-                    'data' => $item['data'],
-                ],
+                static function ($item) {
+                    $role = $item['role'] instanceof GptRolesEnum
+                        ? $item['role']->value
+                        : $item['role'];
+
+                    return [
+                        'role' => $role,
+                        'text' => $item['text'],
+                        'data' => $item['data'],
+                    ];
+                },
                 $this->context
             ),
             JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR
@@ -154,7 +156,7 @@ class GptContextManager
     }
 
     /**
-     * Деструктор класса ContextManager.
+     * Деструктор класса GptContextManager.
      * Сохраняет контекст на диск при разрушении объекта.
      */
     public function __destruct()
@@ -194,5 +196,22 @@ class GptContextManager
         ) {
             throw new \InvalidArgumentException('Invalid context item structure.');
         }
+    }
+
+    /**
+     * Создает элемент контекста.
+     *
+     * @param GptRolesEnum $role Роль.
+     * @param string $text Текст.
+     * @param array<string>|null $data Данные.
+     * @return array{role: GptRolesEnum, text: string, data: ?array<string>} Элемент контекста.
+     */
+    public static function createContextItem(GptRolesEnum $role, string $text, ?array $data = null): array
+    {
+        return [
+            'role' => $role,
+            'text' => $text,
+            'data' => $data,
+        ];
     }
 }

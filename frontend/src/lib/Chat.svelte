@@ -1,6 +1,7 @@
 <script lang="ts">
     import { onMount, afterUpdate } from 'svelte'; // Импортируем onMount и afterUpdate из Svelte
     import TypingAnimation from './TypingAnimation.svelte'; // Импортируем компонент анимации
+    import { marked } from 'marked'; // Импортируем библиотеку marked для поддержки markdown
 
     const API_URL: string = 'http://assistant.local/api/chat_bot'; // Константа для URL API
 
@@ -198,7 +199,7 @@
 <div>
     <div class="chat-container">
         {#each messages as { type, text } }
-            <div class="message {type}">{text}</div>
+            <div class="message {type}">{(text)}</div>
         {/each}
         {#if isTyping}
             <TypingAnimation />

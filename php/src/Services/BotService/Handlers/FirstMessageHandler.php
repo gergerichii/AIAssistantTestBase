@@ -7,15 +7,17 @@ namespace App\Services\BotService\Handlers;
 use App\Services\BotService\Dto\RequestDto;
 use App\Services\BotService\Dto\ResponseDto;
 use App\Services\BotService\Enums\ResponseStatusEnum;
-use App\Services\BotService\Handlers\Dto\OpenAIGptConfigDto;
+use App\Services\BotService\Handlers\Dto\FirstMessageConfigDto;
+use App\Services\BotService\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
 use App\Services\BotService\Handlers\Enums\HandlerUsageEnum;
+use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
 
 /**
- * Class OpenAIGptMessageHandler
- * Реализация интерфейса HandlerInterface для обработки API ответов OpenAI GPT.
+ * Class FirstMessageHandler
+ * Реализация интерфейса MessageHandlerInterface для обработки первого сообщения.
  */
-class OpenAIGptMessageHandler implements MessageHandlerInterface
+class FirstMessageHandler implements MessageHandlerInterface
 {
     /**
      * @var int Приоритет обработчика.
@@ -23,12 +25,12 @@ class OpenAIGptMessageHandler implements MessageHandlerInterface
     private int $priority = 0;
 
     /**
-     * Конструктор класса OpenAIGptMessageHandler.
+     * Конструктор класса FirstMessageHandler.
      *
-     * @param OpenAIGptConfigDto $config Настройки по умолчанию.
+     * @param FirstMessageConfigDto $config Настройки по умолчанию.
      */
     public function __construct(
-        private OpenAIGptConfigDto $config,
+        private FirstMessageConfigDto $config,
     ) {
     }
 
@@ -41,11 +43,13 @@ class OpenAIGptMessageHandler implements MessageHandlerInterface
      */
     public function handle(RequestDto $request, RequestDto $userRequest): ResponseDto
     {
-        //TODO Реализовать обработку запроса
         return new ResponseDto(
-            result: 'Ответ от OpenAI GPT пока не реализован',
-            addToContext: [],
-            status: ResponseStatusEnum::FINAL
+            result: $request->isFirstMessage ? $this->config->welcomeMessage : '',
+            addToContext: $request->isFirstMessage ?[GptContextManager::createContextItem(
+                role: GptRolesEnum::USER,
+                text: 'bot: Поздоровайся с клиентом первый!'
+            )] : [],
+            status: $request->isFirstMessage ? $this->config->handlerResponseStatus : ResponseStatusEnum::SKIPPED,
         );
     }
 
@@ -76,6 +80,6 @@ class OpenAIGptMessageHandler implements MessageHandlerInterface
      */
     public static function getHandlerUsage(): HandlerUsageEnum
     {
-        return HandlerUsageEnum::PAID_MODEL_GPT;
+        return HandlerUsageEnum::STATIC_HANDLER;
     }
 }

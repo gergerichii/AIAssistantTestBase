@@ -155,6 +155,8 @@ class BotService
 
         $config = $configs[$configId];
 
+        $handlerNumber = 0;
+
         foreach ($config->handlers as $handlerConfig) {
             $handlerClass = $handlerConfig->class;
             $handlerInstance = new $handlerClass($handlerConfig->config);
@@ -164,6 +166,8 @@ class BotService
                     'Handler must implement ' . MessageHandlerInterface::class
                 );
             }
+
+            $handlerInstance->setPriority($handlerNumber++);
 
             $this->getHandlerPipeline()->addHandler(handler: $handlerInstance);
         }

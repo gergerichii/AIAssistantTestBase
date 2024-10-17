@@ -15,13 +15,15 @@ readonly class ResponseDto
 {
     /**
      * @param string $result Результат обработки запроса.
-     * @param array<array{role: GptRolesEnum, text: string, data: ?array<string>}> $context Исходное сообщение от пользователя и контекст.
+     * @param array<array{role: GptRolesEnum, text: string, data: ?array<string>}> $addToContext Исходное сообщение от пользователя и контекст.
      * @param ResponseStatusEnum $status Статус ответа.
+     * @param array<string> $data Дополнительные данные.
      */
     public function __construct(
         public string $result,
-        public array $context,
-        public ResponseStatusEnum $status
+        public array $addToContext,
+        public ResponseStatusEnum $status,
+        public array $data = []
     ) {
     }
 }

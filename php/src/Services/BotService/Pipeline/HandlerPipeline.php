@@ -10,6 +10,7 @@ use App\Services\BotService\Enums\ResponseStatusEnum;
 use App\Services\BotService\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Handlers\Interfaces\MessageHandlerInterface;
 use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
+use Throwable;
 
 /**
  * Class HandlerPipeline
@@ -56,49 +57,31 @@ class HandlerPipeline
             $this->sortHandlers();
         }
 
-        $context = $userRequest->context;
-        if ($this->contextManager) {
-            $context = array_merge($context, $this->contextManager->getContext());
-        }
+        $context = $this->contextManager?->getContext() ?? [];
+        $addContext = $userRequest->context;
+        $context = [...$context, ...$addContext];
 
-        $contextItem = [
-            'role' => GptRolesEnum::USER,
-            'text' => $userRequest->message,
-        ];
-
-        $context[] = $contextItem;
-
-        if ($this->contextManager) {
-            $this->contextManager->addContextItem(
-                role: GptRolesEnum::USER,
-                text: $userRequest->message
-            );
+        if (!empty($userRequest->message)) {
+            $addContext = $this->addUserMessageToContext($addContext, $userRequest->message);
         }
 
         $request = new RequestDto(
             message: $userRequest->message,
             context: $context,
+            isFirstMessage: $userRequest->isFirstMessage,
         );
 
         foreach ($this->handlers as $handler) {
-            do {
-                $response = $handler->handle($request);
+            $response = $this->handleRequest($handler, $request, $userRequest, $context, $addContext);
 
-                if ($response->status === ResponseStatusEnum::FINAL) {
-                    return $this->createFinalResponse($response->result, $context);
-                }
+            if ($this->isFinalResponse($response)) {
+                $this->mergeToContextManager($addContext);
 
-                if ($response->status === ResponseStatusEnum::INTERMEDIATE) {
-                    $request = $this->createIntermediateRequest($userRequest, $response->result, $context, GptRolesEnum::SYSTEM);
-                }
-
-                if ($response->status === ResponseStatusEnum::NO_ANSWER) {
-                    return $this->createNoAnswerResponse($context);
-                }
-            } while ($response->status === ResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME);
+                return $response;
+            }
         }
 
-        return $this->createNoAnswerResponse($context);
+        return $this->createNoAnswerResponse();
     }
 
     /**
@@ -129,6 +112,94 @@ class HandlerPipeline
     }
 
     /**
+     * Обрабатывает запрос с помощью обработчика.
+     *
+     * @param MessageHandlerInterface $handler Обработчик.
+     * @param RequestDto $request Запрос.
+     * @param RequestDto $userRequest Исходный запрос пользователя.
+     * @param array $context Общий Контекст запроса.
+     * @param array $addContext Контекст который формируется во время обработки сообщения.
+     * @return ResponseDto Ответ обработчика.
+     */
+    private function handleRequest(
+        MessageHandlerInterface $handler,
+        RequestDto &$request,
+        RequestDto $userRequest,
+        array &$context,
+        array &$addContext
+    ): ResponseDto {
+        do {
+            try {
+                $response = $handler->handle($request, $userRequest);
+            } catch (Throwable $exception) {
+                return $this->createErrorResponse($exception->getMessage());
+            }
+
+            $isSkipped = $response->status === ResponseStatusEnum::SKIPPED;
+            $result = $isSkipped ? $request->message : $this->handleResponse($response->result);
+
+            $isIntermediateResponse = $this->isIntermediateResponse($response);
+
+            if (!empty($response->addToContext)) {
+                $context = [...$context, ...$response->addToContext];
+                $addContext = [...$addContext, ...$response->addToContext];
+            }
+
+            if (!$isSkipped) {
+                $this->updateContext($context, $addContext, $isIntermediateResponse, $result, $response->data);
+            }
+
+            if ($isIntermediateResponse) {
+                $request = $this->createIntermediateRequest(
+                    result: $result,
+                    isFirstMessage: $request->isFirstMessage,
+                    context: $context
+                );
+            }
+        } while ($response->status === ResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME);
+
+        return new ResponseDto(
+            result: $result,
+            addToContext: [],
+            status: $response->status,
+        );
+    }
+
+    /**
+     * Проверяет, является ли ответ окончательным.
+     *
+     * @param ResponseDto $response Ответ для проверки.
+     * @return bool True, если ответ окончательный.
+     */
+    private function isFinalResponse(ResponseDto $response): bool
+    {
+        return in_array($response->status, [
+            ResponseStatusEnum::FINAL,
+            ResponseStatusEnum::NO_ANSWER,
+            ResponseStatusEnum::ERROR,
+        ], true);
+    }
+
+    /**
+     * Проверяет, является ли ответ промежуточным.
+     *
+     * @param ResponseDto $response Ответ для проверки.
+     * @return bool True, если ответ промежуточный.
+     */
+    private function isIntermediateResponse(ResponseDto $response): bool
+    {
+        return in_array(
+            $response->status,
+            [
+                ResponseStatusEnum::INTERMEDIATE,
+                ResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME,
+                ResponseStatusEnum::SKIPPED,
+            ],
+            true
+        );
+    }
+
+    /**
      * Сортирует обработчики по приоритету.
      */
     private function sortHandlers(): void
@@ -143,6 +214,115 @@ class HandlerPipeline
     }
 
     /**
+     * Добавляет сообщение пользователя в контекст.
+     *
+     * @param array $context Контекст запроса.
+     * @param string $message Сообщение пользователя.
+     * @return array Обновленный контекст.
+     */
+    private function addUserMessageToContext(array $context, string $message): array
+    {
+        $contextItem = [
+            'role' => GptRolesEnum::USER,
+            'text' => $message,
+        ];
+        $context[] = $contextItem;
+
+        return $context;
+    }
+
+    /**
+     * Создает промежуточный запрос.
+     *
+     * @param string $result Результат предыдущего обработчика.
+     * @param array $context Контекст обработки.
+     * @return RequestDto Промежуточный запрос.
+     */
+    private function createIntermediateRequest(string $result, $isFirstMessage, array &$context): RequestDto
+    {
+        return new RequestDto(
+            message: $result,
+            context: $context,
+            isFirstMessage: $isFirstMessage,
+        );
+    }
+
+    /**
+     * Создает ответ "Нет ответа".
+     *
+     * @return ResponseDto Ответ "Нет ответа".
+     */
+    private function createNoAnswerResponse(): ResponseDto
+    {
+        return new ResponseDto(
+            result: 'Нет ответа. Повторите попытку позже',
+            addToContext: [],
+            status: ResponseStatusEnum::NO_ANSWER,
+        );
+    }
+
+    /**
+     * Создает ответ с ошибкой.
+     *
+     * @param string $result Результат обработки.
+     * @return ResponseDto Ответ с ошибкой.
+     */
+    private function createErrorResponse(string $result): ResponseDto
+    {
+        return new ResponseDto(
+            result: $result,
+            addToContext: [],
+            status: ResponseStatusEnum::ERROR,
+        );
+    }
+
+    /**
+     * Обновляет контекст с учетом нового ответа.
+     *
+     * @param array $context Контекст запроса.
+     * @param bool $isIntermediateResponse Является ли ответ промежуточным.
+     * @param string $result Результат обработки.
+     * @param mixed $data Дополнительные данные.
+     */
+    private function updateContext(
+        array &$context,
+        array &$addContext,
+        bool $isIntermediateResponse,
+        string $result,
+        mixed $data
+    ): void {
+        $addContext[] = $context[] = [
+            'role' => $isIntermediateResponse ? GptRolesEnum::USER : GptRolesEnum::ASSISTANT,
+            'text' => $result,
+            'data' => $data,
+        ];
+    }
+
+    /**
+     * Добавляет элементы в сохраняемый контекст.
+     *
+     * @param array $addToContext Элементы для добавления в контекст.
+     */
+    private function mergeToContextManager(array $addToContext): void
+    {
+        if (!isset($this->contextManager)) {
+            return;
+        }
+
+        foreach ($addToContext as $contextItem) {
+            $role = $contextItem['role'] instanceof GptRolesEnum
+                ? $contextItem['role']
+                : GptRolesEnum::from($contextItem['role']);
+
+            $this->contextManager?->addContextItem(
+                role: $role,
+                text: $contextItem['text'],
+                data: $contextItem['data'] ?? null
+            );
+        }
+    }
+
+    /**
      * Обрабатывает ответ, возвращая результат в виде строки.
      *
      * @param string $response Ответ для обработки.
@@ -152,81 +332,5 @@ class HandlerPipeline
     {
         // Заглушка, возвращающая исходную строку
         return $response;
-    }
-
-    /**
-     * Создает окончательный ответ.
-     *
-     * @param string $result Результат обработки.
-     * @param array $context Контекст обработки.
-     * @return ResponseDto Окончательный ответ.
-     */
-    private function createFinalResponse(string $result, array $context): ResponseDto
-    {
-        $finalResult = $this->handleResponse($result);
-        $contextItem = [
-            'role' => GptRolesEnum::ASSISTANT,
-            'text' => $finalResult,
-        ];
-        $context[] = $contextItem;
-
-        if ($this->contextManager) {
-            $this->contextManager->addContextItem(
-                role: GptRolesEnum::ASSISTANT,
-                text: $finalResult
-            );
-        }
-
-        return new ResponseDto(
-            result: $finalResult,
-            context: $context,
-            status: ResponseStatusEnum::FINAL,
-        );
-    }
-
-    /**
-     * Создает промежуточный запрос.
-     *
-     * @param RequestDto $userRequest Исходный запрос пользователя.
-     * @param string $result Результат обработки.
-     * @param array $context Контекст обработки.
-     * @param GptRolesEnum $role Роль в контексте.
-     * @return RequestDto Промежуточный запрос.
-     */
-    private function createIntermediateRequest(RequestDto $userRequest, string $result, array &$context, GptRolesEnum $role): RequestDto
-    {
-        $intermediateResult = $this->handleResponse($result);
-        $contextItem = [
-            'role' => $role,
-            'text' => $intermediateResult,
-        ];
-        $context[] = $contextItem;
-
-        if ($this->contextManager) {
-            $this->contextManager->addContextItem(
-                role: $role,
-                text: $intermediateResult
-            );
-        }
-
-        return new RequestDto(
-            message: $userRequest->message,
-            context: $context,
-        );
-    }
-
-    /**
-     * Создает ответ "Нет ответа".
-     *
-     * @param array $context Контекст обработки.
-     * @return ResponseDto Ответ "Нет ответа".
-     */
-    private function createNoAnswerResponse(array $context): ResponseDto
-    {
-        return new ResponseDto(
-            result: 'Нет ответа. Повторите попытку позже',
-            context: $context,
-            status: ResponseStatusEnum::NO_ANSWER,
-        );
     }
 }
