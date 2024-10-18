@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\BotService\Core\RequestHandler\Handlers\Dto;
 
-use App\Services\StoredConfigService\Interfaces\ConfigDtoInterface;
+use App\Services\BotService\Interfaces\ConfigDtoInterface;
 
 /**
  * Class YandexGptDto
@@ -16,7 +16,7 @@ readonly class YandexGptConfigDto implements ConfigDtoInterface
     /**
      * DTO для хранения настроек Yandex GPT.
      * @param string $url URL Yandex GPT API
-     * @param string $bearerToken API key Yandex Cloud
+     * @param string $authKey API key Yandex Cloud
      * @param string $folderId Folder ID Yandex Cloud
      * @param string $modelName URI модели Yandex GPT
      * @param int $maxTokens Максимальное количество токенов ответа
@@ -25,7 +25,7 @@ readonly class YandexGptConfigDto implements ConfigDtoInterface
      */
     public function __construct(
         public string $url,
-        public string $bearerToken,
+        public string $authKey,
         public string $folderId,
         public string $modelName,
         public int $maxTokens,

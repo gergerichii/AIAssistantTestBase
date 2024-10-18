@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\StoredConfigService\Interfaces;
+namespace App\Services\BotService\Interfaces;
 
 /**
  * Интерфейс для всех DTO конфигураций.

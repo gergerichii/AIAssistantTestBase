@@ -23,6 +23,7 @@ services:
     volumes:
       - ./php:/var/www
       - ./php/php.ini:/usr/local/etc/php/php.ini
+      - ./php/sessions:/var/lib/php/sessions
       - phpsocket:/var/run
     links:
       - nginx:assistant-api.local

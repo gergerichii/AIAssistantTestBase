@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Dto\ChatConfigDto;
 use App\Services\BotService\BotService;
-use App\Services\BotService\Core\ContextManager\ContextManager;
 use App\Services\BotService\Dto\RequestDto as BotRequestDto;
-use App\Services\StoredConfigService\ConfigManager;
-use App\Services\StoredConfigService\Storages\JsonConfigStorage;
+use App\Services\BotService\Helpers\BotConfigManager;
+use App\Services\BotService\Helpers\ConfigManager\Drivers\PhpFileDriver;
+use Aura\Session\Segment;
 use JsonException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -20,7 +19,8 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class ChatBotController
 {
     private const string BOT_NAME = 'TestGptBot';
-    private ?ConfigManager $configManager = null;
+    private const string CONFIG_ID_SESSION_KEY = 'currentBotConfigId';
+    private ?BotConfigManager $configManager = null;
 
     /**
      * Обрабатывает POST запросы к /chat_bot
@@ -32,22 +32,21 @@ class ChatBotController
      */
     public function handlePostMessage(Request $request, Response $response): Response
     {
+        /** @var Segment $session */
+        $session = $request->getAttribute('session')->getSegment(self::class);
         $body = json_decode($request->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
+
         $userMessage = $body['message'] ?? '';
-        $configManager = $this->getConfigManager();
-        $currentConfig = $body['currentBotConfig'] ?? null;
-        $configList = BotService::getConfigNames();
-
-        if ($currentConfig !== null) {
-            $storedConfigDto = new ChatConfigDto($currentConfig);
-            $configManager->updateConfig(self::BOT_NAME, $storedConfigDto);
-        } else {
-            $storedConfigDto = new ChatConfigDto(key($configList));
-            $storedConfigDto = $configManager->registerConfig(self::BOT_NAME, $storedConfigDto);
-        }
-
         $isClearContext = $userMessage === '@clearContext';
         $isFirstMessage = $userMessage === '@handshake' || $isClearContext;
+
+        $configManager = $this->getConfigManager();
+        $configList = $configManager->getConfigsNames();
+        $botConfigId = $body['currentBotConfig']
+            ?? $session->get(self::CONFIG_ID_SESSION_KEY, key($configList));
+
+        $botConfig = $configManager->getConfigById($botConfigId);
+        $session->set(self::CONFIG_ID_SESSION_KEY, $botConfigId);
 
         $requestDto = new BotRequestDto(
             message: $isFirstMessage ? '' : $userMessage,
@@ -55,7 +54,7 @@ class ChatBotController
             isClearContext: $isClearContext,
         );
 
-        $botService = new BotService(botId: self::BOT_NAME, configId: $storedConfigDto->currentBotConfig);
+        $botService = new BotService(botId: self::BOT_NAME, config: $botConfig);
         $botResponseResult = $botService->processRequest($requestDto);
 
         $botResponse = $botResponseResult->result;
@@ -66,7 +65,7 @@ class ChatBotController
                     'reply' => $botResponse,
                     'config' => [
                         'gptModelsList' => $configList,
-                        'currentBotConfig' => $storedConfigDto->currentBotConfig,
+                        'currentBotConfig' => $botConfigId,
                     ]
                 ],
                 JSON_THROW_ON_ERROR
@@ -76,11 +75,10 @@ class ChatBotController
         return $response->withHeader('Content-Type', 'application/json');
     }
 
-    private function getConfigManager(): ConfigManager
+    private function getConfigManager(): BotConfigManager
     {
-        return $this->configManager ??= new ConfigManager(
-            self::BOT_NAME,
-            new JsonConfigStorage(),
+        return $this->configManager ??= new BotConfigManager(
+            new PhpFileDriver(CONFIG_DIR . 'BotService' . DIRECTORY_SEPARATOR),
         );
     }
 }

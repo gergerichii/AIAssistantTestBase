@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Services\BotService\Dto\ConfigDto as BotConfigDto;
 use App\Services\BotService\Core\RequestHandler\Dto\ConfigDto as RequestHandlerConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Dto\FirstMessageConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Dto\OpenAIGptConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\HandlerUsageEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\HandshakeHandler;
 use App\Services\BotService\Core\RequestHandler\Handlers\OpenAIGptHandler;
+use App\Services\BotService\Dto\ConfigDto as BotConfigDto;
 
 return new BotConfigDto(
     id: 'OpenAIGptTest',

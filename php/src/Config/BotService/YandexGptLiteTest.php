@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Services\BotService\Dto\ConfigDto as BotConfigDto;
 use App\Services\BotService\Core\RequestHandler\Dto\ConfigDto as RequestHandlerConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Dto\FirstMessageConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Dto\YandexGptConfigDto;
@@ -13,6 +12,7 @@ use App\Services\BotService\Core\SystemCommandHandler\Dto\ConfigDto as SystemCom
 use App\Services\BotService\Core\SystemCommandHandler\Handlers\Dto\GetPriceListConfigDto;
 use App\Services\BotService\Core\SystemCommandHandler\Handlers\Enum\HandlerUsageEnum as SystemCommandHandlerUsageEnum;
 use App\Services\BotService\Core\SystemCommandHandler\Handlers\GetPriceListHandler;
+use App\Services\BotService\Dto\ConfigDto as BotConfigDto;
 
 return new BotConfigDto(
     id: 'YandexGptLiteTest',
@@ -30,7 +30,8 @@ return new BotConfigDto(
             usage: HandlerUsageEnum::PAID_MODEL_GPT,
             config: new YandexGptConfigDto(
                 url: 'https://llm.api.cloud.yandex.net/foundationModels/v1/completion',
-                bearerToken: 't1.9euelZqJl4mbismXnJqTnJCUkJLOyO3rnpWaloyVlpzGj4qNnMacysfIicnl9PdzJTxH-e9yCGy33fT3M1Q5R_nvcghst83n9euelZrPkZCLj8eMmouNisabnoyOx-_8xeuelZrPkZCLj8eMmouNisabnoyOxw.vooVtiFFhzratEYDEzj52i_MpnDQrAVEHeqkzeZ1afuBKiE0o_T2k5NQhfO6XajSHTuJqEmb3VKiCIZXxH06CA',
+                authKey: 'Api-Key AQVN0JPOwEXOjVAQozWe2U7XHro6hf4BIZA9A7DR',
+//                authKey: 'Bearer t1.9euelZqJl4mbismXnJqTnJCUkJLOyO3rnpWaloyVlpzGj4qNnMacysfIicnl9PdzJTxH-e9yCGy33fT3M1Q5R_nvcghst83n9euelZrPkZCLj8eMmouNisabnoyOx-_8xeuelZrPkZCLj8eMmouNisabnoyOxw.vooVtiFFhzratEYDEzj52i_MpnDQrAVEHeqkzeZ1afuBKiE0o_T2k5NQhfO6XajSHTuJqEmb3VKiCIZXxH06CA',
                 folderId: 'b1go54pps8fofr8ebicn',
                 modelName: 'yandexgpt-lite/latest',
                 maxTokens: 60,

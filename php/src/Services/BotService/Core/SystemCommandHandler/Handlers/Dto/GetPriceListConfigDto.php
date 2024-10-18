@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\BotService\Core\SystemCommandHandler\Handlers\Dto;
 
-use App\Services\StoredConfigService\Interfaces\ConfigDtoInterface;
+use App\Services\BotService\Interfaces\ConfigDtoInterface;
 
 /**
  * Class GetPriceListConfigDto

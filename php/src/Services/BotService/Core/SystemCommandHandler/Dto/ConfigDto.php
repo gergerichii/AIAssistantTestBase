@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\BotService\Core\SystemCommandHandler\Dto;
 
 use App\Services\BotService\Core\SystemCommandHandler\Handlers\Enum\HandlerUsageEnum;
-use App\Services\StoredConfigService\Interfaces\ConfigDtoInterface;
+use App\Services\BotService\Interfaces\ConfigDtoInterface;
 
 /**
  * Class ConfigDto

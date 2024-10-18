@@ -22,6 +22,7 @@ class HomeController
     public function index(Request $request, Response $response): Response
     {
         $response->getBody()->write('Добро пожаловать на главную страницу!');
-        return $response;
+
+        return $response->withHeader('Content-Type', 'text/html');
     }
 }

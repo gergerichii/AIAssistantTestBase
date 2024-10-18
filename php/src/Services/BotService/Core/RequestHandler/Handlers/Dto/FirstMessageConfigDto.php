@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\BotService\Core\RequestHandler\Handlers\Dto;
 
 use App\Services\BotService\Core\RequestHandler\Enum\ResponseStatusEnum;
-use App\Services\StoredConfigService\Interfaces\ConfigDtoInterface;
+use App\Services\BotService\Interfaces\ConfigDtoInterface;
 
 /**
  * Class FirstMessageConfigDto

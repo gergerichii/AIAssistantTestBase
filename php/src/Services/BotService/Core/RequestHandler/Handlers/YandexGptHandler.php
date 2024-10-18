@@ -148,7 +148,7 @@ class YandexGptHandler implements HandlerInterface
             $this->httpClient = new Client([
                 'base_uri' => $this->config->url,
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $this->config->bearerToken,
+                    'Authorization' => $this->config->authKey,
                     'x-folder-id' => $this->config->folderId,
                     'Content-Type' => 'application/json',
                 ],

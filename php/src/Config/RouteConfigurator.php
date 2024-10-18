@@ -21,16 +21,10 @@ class RouteConfigurator
      */
     public function configure(App $app): void
     {
-        // Добавляем маршрут для корневой страницы
         $app->get('/', [HomeController::class, 'index']);
 
-        // Изменяем маршрут для phpinfo
         $app->get('/phpinfo', [InfoController::class, 'phpInfo']);
 
-        // Добавляем маршрут для обработки сообщений пользователя chat_bot
         $app->post('/chat_bot', [ChatBotController::class, 'handlePostMessage']);
-
-        // Добавляем маршрут для обработки сообщений пользователя chat_bot
-        $app->get('/chat_bot/get_config', [ChatBotController::class, 'handleGetConfig']);
     }
 }
