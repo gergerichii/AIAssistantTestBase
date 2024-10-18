@@ -6,10 +6,10 @@ namespace App\Controllers;
 
 use App\Dto\ChatConfigDto;
 use App\Services\BotService\BotService;
-use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
-use App\Services\BotService\Request\Dto\HandlerRequestDto;
-use App\Services\StoredConfig\ConfigManager;
-use App\Services\StoredConfig\Storages\JsonConfigStorage;
+use App\Services\BotService\Core\ContextManager\ContextManager;
+use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
+use App\Services\StoredConfigService\ConfigManager;
+use App\Services\StoredConfigService\Storages\JsonConfigStorage;
 use JsonException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -37,7 +37,7 @@ class ChatBotController
         $configManager = $this->getConfigManager();
         $currentConfig = $body['currentBotConfig'] ?? null;
         $configList = BotService::getConfigNames();
-        $contextManager = new GptContextManager(self::BOT_NAME);
+        $contextManager = new ContextManager(self::BOT_NAME);
 
         if ($currentConfig !== null) {
             $storedConfigDto = new ChatConfigDto($currentConfig);
@@ -56,7 +56,7 @@ class ChatBotController
 
         $isFirstMessage = $userMessage === '@handshake';
 
-        $requestDto = new HandlerRequestDto(
+        $requestDto = new RequestDto(
             message: $isFirstMessage ? '' : $userMessage,
             context: [],
             isFirstMessage: $isFirstMessage,

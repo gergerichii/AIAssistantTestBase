@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\BotService;
 
-use App\Services\BotService\Dto\BotConfigDto;
-use App\Services\BotService\Helpers\GptContextManager\GptContextManager;
-use App\Services\BotService\Request\Dto\HandlerRequestDto;
-use App\Services\BotService\Request\Dto\HandlerResponseDto;
-use App\Services\BotService\Request\HandlerPipeline;
-use App\Services\BotService\Request\Handlers\Enums\GptRolesEnum;
-use App\Services\BotService\Request\Interfaces\HandlerInterface;
+use App\Services\BotService\Dto\ConfigDto;
+use App\Services\BotService\Core\ContextManager\ContextManager;
+use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
+use App\Services\BotService\Core\RequestHandler\Dto\ResponseDto;
+use App\Services\BotService\Core\RequestHandler\HandlerPipeline;
+use App\Services\BotService\Core\RequestHandler\Handlers\Enums\GptRolesEnum;
+use App\Services\BotService\Core\RequestHandler\Interfaces\HandlerInterface;
 use InvalidArgumentException;
 use JsonException;
 use RuntimeException;
@@ -22,9 +22,9 @@ use RuntimeException;
 class BotService
 {
     /**
-     * @var GptContextManager|null Менеджер контекста GPT.
+     * @var ContextManager|null Менеджер контекста GPT.
      */
-    private ?GptContextManager $contextManager;
+    private ?ContextManager $contextManager;
 
     /**
      * @var HandlerPipeline|null Пайплайн обработчиков.
@@ -32,7 +32,7 @@ class BotService
     private ?HandlerPipeline $handlerPipeline;
 
     /**
-     * @var BotConfigDto[] Кеш конфигов.
+     * @var ConfigDto[] Кеш конфигов.
      */
     private static array $cachedConfigs = [];
 
@@ -41,14 +41,14 @@ class BotService
      *
      * @param string $botId Идентификатор бота.
      * @param string $configId Идентификатор конфига.
-     * @param GptContextManager|null $contextManager Менеджер контекста GPT.
+     * @param ContextManager|null $contextManager Менеджер контекста GPT.
      * @param HandlerPipeline|null $handlerPipeline Конвейер обработчиков.
      * @throws JsonException
      */
     public function __construct(
         private readonly string $botId,
         string $configId,
-        ?GptContextManager $contextManager = null,
+        ?ContextManager $contextManager = null,
         ?HandlerPipeline $handlerPipeline = null,
     ) {
         $this->handlerPipeline = $handlerPipeline;
@@ -59,10 +59,10 @@ class BotService
     /**
      * Обрабатывает запрос к боту.
      *
-     * @param HandlerRequestDto $request Запрос к боту.
-     * @return HandlerResponseDto Ответ от бота.
+     * @param RequestDto $request Запрос к боту.
+     * @return ResponseDto Ответ от бота.
      */
-    public function processRequest(HandlerRequestDto $request): HandlerResponseDto
+    public function processRequest(RequestDto $request): ResponseDto
     {
         return $this->handlerPipeline->process(userRequest: $request);
     }
@@ -88,9 +88,9 @@ class BotService
     }
 
     /**
-     * Возвращает список конфигов из папки Config, проиндексированный по BotConfigDto::id.
+     * Возвращает список конфигов из папки Config, проиндексированный по ConfigDto::id.
      *
-     * @return BotConfigDto[] Список конфигов.
+     * @return ConfigDto[] Список конфигов.
      */
     private static function getConfigs(): array
     {
@@ -99,7 +99,7 @@ class BotService
             $configs = [];
 
             foreach ($configFiles as $file) {
-                /** @var BotConfigDto $config */
+                /** @var ConfigDto $config */
                 $config = require $file;
                 $configs[$config->id] = $config;
             }
@@ -111,7 +111,7 @@ class BotService
     }
 
     /**
-     * Возвращает массив, где ключ это BotConfigDto::id, а значение BotConfigDto::name.
+     * Возвращает массив, где ключ это ConfigDto::id, а значение ConfigDto::name.
      *
      * @return array<string, string> Массив идентификаторов и имен конфигов.
      */
@@ -130,16 +130,16 @@ class BotService
     /**
      * Возвращает менеджер контекста GPT.
      *
-     * @return GptContextManager Менеджер контекста GPT.
+     * @return ContextManager Менеджер контекста GPT.
      * @throws JsonException
      */
-    private function getContextManager(): GptContextManager
+    private function getContextManager(): ContextManager
     {
-        return $this->contextManager ??= new GptContextManager(contextId: $this->botId);
+        return $this->contextManager ??= new ContextManager(contextId: $this->botId);
     }
 
     /**
-     * Инициализирует внутреннее свойство $handlers из конфигов BotConfigDto::handlers.
+     * Инициализирует внутреннее свойство $handlers из конфигов ConfigDto::handlers.
      *
      * @param string $configId Идентификатор конфига.
      * @throws RuntimeException Если конфиг с указанным идентификатором не найден.
@@ -157,7 +157,7 @@ class BotService
 
         $handlerNumber = 0;
 
-        foreach ($config->handlers as $handlerConfig) {
+        foreach ($config->requestHandlers as $handlerConfig) {
             $handlerClass = $handlerConfig->class;
             $handlerInstance = new $handlerClass($handlerConfig->config);
 
