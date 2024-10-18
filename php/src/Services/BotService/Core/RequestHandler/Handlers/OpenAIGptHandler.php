@@ -6,7 +6,7 @@ namespace App\Services\BotService\Core\RequestHandler\Handlers;
 
 use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
 use App\Services\BotService\Core\RequestHandler\Dto\ResponseDto;
-use App\Services\BotService\Core\RequestHandler\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Core\RequestHandler\Enum\ResponseStatusEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\Dto\OpenAIGptConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\HandlerUsageEnum;
 use App\Services\BotService\Core\RequestHandler\Interfaces\HandlerInterface;
@@ -45,7 +45,7 @@ class OpenAIGptHandler implements HandlerInterface
         return new ResponseDto(
             result: 'Ответ от OpenAI GPT пока не реализован',
             addToContext: [],
-            status: HandlerResponseStatusEnum::FINAL
+            status: ResponseStatusEnum::FINAL
         );
     }
 

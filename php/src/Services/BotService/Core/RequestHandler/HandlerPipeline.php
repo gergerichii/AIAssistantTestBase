@@ -7,7 +7,7 @@ namespace App\Services\BotService\Core\RequestHandler;
 use App\Services\BotService\Core\ContextManager\ContextManager;
 use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
 use App\Services\BotService\Core\RequestHandler\Dto\ResponseDto;
-use App\Services\BotService\Core\RequestHandler\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Core\RequestHandler\Enum\ResponseStatusEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Core\RequestHandler\Interfaces\HandlerInterface;
 use Throwable;
@@ -135,7 +135,7 @@ class HandlerPipeline
                 return $this->createErrorResponse($exception->getMessage());
             }
 
-            $isSkipped = $response->status === HandlerResponseStatusEnum::SKIPPED;
+            $isSkipped = $response->status === ResponseStatusEnum::SKIPPED;
             $result = $isSkipped ? $request->message : $this->handleResponse($response->result);
 
             $isIntermediateResponse = $this->isIntermediateResponse($response);
@@ -156,7 +156,7 @@ class HandlerPipeline
                     context: $context
                 );
             }
-        } while ($response->status === HandlerResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME);
+        } while ($response->status === ResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME);
 
         return new ResponseDto(
             result: $result,
@@ -174,9 +174,9 @@ class HandlerPipeline
     private function isFinalResponse(ResponseDto $response): bool
     {
         return in_array($response->status, [
-            HandlerResponseStatusEnum::FINAL,
-            HandlerResponseStatusEnum::NO_ANSWER,
-            HandlerResponseStatusEnum::ERROR,
+            ResponseStatusEnum::FINAL,
+            ResponseStatusEnum::NO_ANSWER,
+            ResponseStatusEnum::ERROR,
         ], true);
     }
 
@@ -191,9 +191,9 @@ class HandlerPipeline
         return in_array(
             $response->status,
             [
-                HandlerResponseStatusEnum::INTERMEDIATE,
-                HandlerResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME,
-                HandlerResponseStatusEnum::SKIPPED,
+                ResponseStatusEnum::INTERMEDIATE,
+                ResponseStatusEnum::INTERMEDIATE_HANDLE_RESUME,
+                ResponseStatusEnum::SKIPPED,
             ],
             true
         );
@@ -257,7 +257,7 @@ class HandlerPipeline
         return new ResponseDto(
             result: 'Нет ответа. Повторите попытку позже',
             addToContext: [],
-            status: HandlerResponseStatusEnum::NO_ANSWER,
+            status: ResponseStatusEnum::NO_ANSWER,
         );
     }
 
@@ -272,7 +272,7 @@ class HandlerPipeline
         return new ResponseDto(
             result: $result,
             addToContext: [],
-            status: HandlerResponseStatusEnum::ERROR,
+            status: ResponseStatusEnum::ERROR,
         );
     }
 

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\BotService;
 
-use App\Services\BotService\Dto\ConfigDto;
+use App\Services\BotService\Dto\ConfigDto as BotConfigDto;
+use App\Services\BotService\Dto\RequestDto as BotRequestDto;
+use App\Services\BotService\Dto\ResponseDto as BotResponseDto;
 use App\Services\BotService\Core\ContextManager\ContextManager;
-use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
-use App\Services\BotService\Core\RequestHandler\Dto\ResponseDto;
+use App\Services\BotService\Core\RequestHandler\Dto\RequestDto as HandlerRequestDto;
 use App\Services\BotService\Core\RequestHandler\HandlerPipeline;
+use App\Services\BotService\Core\RequestHandler\Enum\ResponseStatusEnum as HandlerResponseStatusEnum;
+use App\Services\BotService\Enum\ResponseStatusEnum as BotResponseStatusEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Core\RequestHandler\Interfaces\HandlerInterface;
 use InvalidArgumentException;
@@ -32,7 +35,7 @@ class BotService
     private ?HandlerPipeline $handlerPipeline;
 
     /**
-     * @var ConfigDto[] Кеш конфигов.
+     * @var BotConfigDto[] Кеш конфигов.
      */
     private static array $cachedConfigs = [];
 
@@ -59,12 +62,29 @@ class BotService
     /**
      * Обрабатывает запрос к боту.
      *
-     * @param RequestDto $request Запрос к боту.
-     * @return ResponseDto Ответ от бота.
+     * @param BotRequestDto $request Запрос к боту.
+     * @return BotResponseDto Ответ от бота.
      */
-    public function processRequest(RequestDto $request): ResponseDto
+    public function processRequest(BotRequestDto $request): BotResponseDto
     {
-        return $this->handlerPipeline->process(userRequest: $request);
+        if ($request->isClearContext) {
+            $this->contextManager->deleteContext();
+        }
+
+        $handlerRequest = new HandlerRequestDto(
+            message: $request->message,
+            isFirstMessage: $request->isFirstMessage,
+        );
+
+        $handlerResponse = $this->handlerPipeline->process(userRequest: $handlerRequest);
+
+        return new BotResponseDto(
+            result: $handlerResponse->result,
+            status: match ($handlerResponse->status) {
+                HandlerResponseStatusEnum::FINAL => BotResponseStatusEnum::OK,
+                default => BotResponseStatusEnum::ERROR,
+            },
+        );
     }
 
     /**
@@ -79,18 +99,9 @@ class BotService
     }
 
     /**
-     * Очищает текущий контекст.
-     * @throws JsonException
-     */
-    public function newContext(): void
-    {
-        $this->getContextManager()->deleteContext();
-    }
-
-    /**
-     * Возвращает список конфигов из папки Config, проиндексированный по ConfigDto::id.
+     * Возвращает список конфигов из папки Config, проиндексированный по BotConfigDto::id.
      *
-     * @return ConfigDto[] Список конфигов.
+     * @return BotConfigDto[] Список конфигов.
      */
     private static function getConfigs(): array
     {
@@ -99,7 +110,7 @@ class BotService
             $configs = [];
 
             foreach ($configFiles as $file) {
-                /** @var ConfigDto $config */
+                /** @var BotConfigDto $config */
                 $config = require $file;
                 $configs[$config->id] = $config;
             }
@@ -111,7 +122,7 @@ class BotService
     }
 
     /**
-     * Возвращает массив, где ключ это ConfigDto::id, а значение ConfigDto::name.
+     * Возвращает массив, где ключ это BotConfigDto::id, а значение BotConfigDto::name.
      *
      * @return array<string, string> Массив идентификаторов и имен конфигов.
      */
@@ -139,7 +150,7 @@ class BotService
     }
 
     /**
-     * Инициализирует внутреннее свойство $handlers из конфигов ConfigDto::handlers.
+     * Инициализирует внутреннее свойство $handlers из конфигов BotConfigDto::handlers.
      *
      * @param string $configId Идентификатор конфига.
      * @throws RuntimeException Если конфиг с указанным идентификатором не найден.

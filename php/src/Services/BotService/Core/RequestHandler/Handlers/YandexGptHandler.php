@@ -7,7 +7,7 @@ namespace App\Services\BotService\Core\RequestHandler\Handlers;
 use App\Services\BotService\Core\ContextManager\ContextManager;
 use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
 use App\Services\BotService\Core\RequestHandler\Dto\ResponseDto;
-use App\Services\BotService\Core\RequestHandler\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Core\RequestHandler\Enum\ResponseStatusEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\Dto\YandexGptConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\HandlerUsageEnum;
@@ -96,13 +96,13 @@ class YandexGptHandler implements HandlerInterface
             return new ResponseDto(
                 result: $message,
                 addToContext: [],
-                status: HandlerResponseStatusEnum::FINAL
+                status: ResponseStatusEnum::FINAL
             );
         } catch (GuzzleException $e) {
             return new ResponseDto(
                 result: 'Ошибка: ' . $e->getMessage(),
                 addToContext: [],
-                status: HandlerResponseStatusEnum::ERROR
+                status: ResponseStatusEnum::ERROR
             );
         }
     }

@@ -7,7 +7,7 @@ namespace App\Controllers;
 use App\Dto\ChatConfigDto;
 use App\Services\BotService\BotService;
 use App\Services\BotService\Core\ContextManager\ContextManager;
-use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
+use App\Services\BotService\Dto\RequestDto as BotRequestDto;
 use App\Services\StoredConfigService\ConfigManager;
 use App\Services\StoredConfigService\Storages\JsonConfigStorage;
 use JsonException;
@@ -37,7 +37,6 @@ class ChatBotController
         $configManager = $this->getConfigManager();
         $currentConfig = $body['currentBotConfig'] ?? null;
         $configList = BotService::getConfigNames();
-        $contextManager = new ContextManager(self::BOT_NAME);
 
         if ($currentConfig !== null) {
             $storedConfigDto = new ChatConfigDto($currentConfig);
@@ -47,21 +46,16 @@ class ChatBotController
             $storedConfigDto = $configManager->registerConfig(self::BOT_NAME, $storedConfigDto);
         }
 
-        if ($userMessage === '@clearContext') {
-            $contextManager->deleteContext();
-            $userMessage = '@handshake';
-        }
+        $isClearContext = $userMessage === '@clearContext';
+        $isFirstMessage = $userMessage === '@handshake' || $isClearContext;
 
-        $botService = new BotService(self::BOT_NAME, $storedConfigDto->currentBotConfig, $contextManager);
-
-        $isFirstMessage = $userMessage === '@handshake';
-
-        $requestDto = new RequestDto(
+        $requestDto = new BotRequestDto(
             message: $isFirstMessage ? '' : $userMessage,
-            context: [],
             isFirstMessage: $isFirstMessage,
+            isClearContext: $isClearContext,
         );
 
+        $botService = new BotService(botId: self::BOT_NAME, configId: $storedConfigDto->currentBotConfig);
         $botResponseResult = $botService->processRequest($requestDto);
 
         $botResponse = $botResponseResult->result;

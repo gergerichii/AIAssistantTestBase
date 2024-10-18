@@ -77,8 +77,9 @@
             addMessage('bot', data.reply);
             applyConfig(data.config);
         } else {
-            console.error('Ошибка при отправке сообщения на сервер');
-            addMessage('bot', 'Ошибка');
+            const errorText = await response.text();
+            console.error('Ошибка при отправке сообщения на сервер:', errorText);
+            addMessage('bot', `Ошибка: ${errorText}`);
         }
     }
 

@@ -7,7 +7,7 @@ namespace App\Services\BotService\Core\RequestHandler\Handlers;
 use App\Services\BotService\Core\ContextManager\ContextManager;
 use App\Services\BotService\Core\RequestHandler\Dto\RequestDto;
 use App\Services\BotService\Core\RequestHandler\Dto\ResponseDto;
-use App\Services\BotService\Core\RequestHandler\Enums\HandlerResponseStatusEnum;
+use App\Services\BotService\Core\RequestHandler\Enum\ResponseStatusEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\Dto\FirstMessageConfigDto;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\GptRolesEnum;
 use App\Services\BotService\Core\RequestHandler\Handlers\Enums\HandlerUsageEnum;
@@ -49,7 +49,7 @@ class HandshakeHandler implements HandlerInterface
                 role: GptRolesEnum::USER,
                 text: 'bot: Поздоровайся с клиентом первый!'
             )] : [],
-            status: $request->isFirstMessage ? $this->config->handlerResponseStatus : HandlerResponseStatusEnum::SKIPPED,
+            status: $request->isFirstMessage ? $this->config->handlerResponseStatus : ResponseStatusEnum::SKIPPED,
         );
     }
 
