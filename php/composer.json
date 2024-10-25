@@ -5,8 +5,10 @@
         "laudis/neo4j-php-client": "dev-main",
         "slim/slim": "^4.10",
         "slim/psr7": "dev-master",
-        "middlewares/aura-session": "dev-master",
-        "php-di/slim-bridge": "dev-master"
+        "php-di/php-di": "^7.0",
+        "php-di/slim-bridge": "^3.4",
+        "aura/session": "2.x-dev",
+        "nikic/php-parser": "^5.3"
     },
     "require-dev": {
         "roave/security-advisories": "dev-latest",

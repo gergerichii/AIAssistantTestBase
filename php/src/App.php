@@ -4,24 +4,29 @@ declare(strict_types=1);
 
 namespace App;
 
-use Middlewares\AuraSession;
+use DI\Bridge\Slim\Bridge;
+use Exception;
 use Middlewares\Debugbar;
 use Middlewares\Whoops;
-use Slim\Factory\AppFactory;
 use App\Config\RouteConfigurator;
+use App\Config\ContainerConfigurator;
 use Throwable;
 
+/**
+ * Основной класс приложения.
+ */
 class App
 {
+    /**
+     * Запускает приложение.
+     * @throws Exception
+     */
     public function run(): void
     {
-        define('CONFIG_DIR', __DIR__ . '/config/');
-
-        $app = AppFactory::create();
+        $app = Bridge::create(ContainerConfigurator::createContainer());
 
         $app->add(Debugbar::class);
         $app->add(Whoops::class);
-        $app->add(AuraSession::class);
 
         // Создаем экземпляр конфигуратора маршрутов
         $routeConfigurator = new RouteConfigurator();

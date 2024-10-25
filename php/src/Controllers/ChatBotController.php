@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Config\AppConstants;
 use App\Services\BotService\BotService;
 use App\Services\BotService\Dto\RequestDto as BotRequestDto;
 use App\Services\BotService\Helpers\BotConfigManager;
 use App\Services\BotService\Helpers\ConfigManager\Drivers\PhpFileDriver;
-use Aura\Session\Segment;
+use Aura\Session\Session;
 use JsonException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -21,6 +22,10 @@ class ChatBotController
     private const string BOT_NAME = 'TestGptBot';
     private const string CONFIG_ID_SESSION_KEY = 'currentBotConfigId';
     private ?BotConfigManager $configManager = null;
+    public function __construct(
+        private readonly Session $session,
+    ){
+    }
 
     /**
      * Обрабатывает POST запросы к /chat_bot
@@ -32,8 +37,7 @@ class ChatBotController
      */
     public function handlePostMessage(Request $request, Response $response): Response
     {
-        /** @var Segment $session */
-        $session = $request->getAttribute('session')->getSegment(self::class);
+        $session = $this->session->getSegment(self::class);
         $body = json_decode($request->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
 
         $userMessage = $body['message'] ?? '';
@@ -78,7 +82,7 @@ class ChatBotController
     private function getConfigManager(): BotConfigManager
     {
         return $this->configManager ??= new BotConfigManager(
-            new PhpFileDriver(CONFIG_DIR . 'BotService' . DIRECTORY_SEPARATOR),
+            new PhpFileDriver(AppConstants::APP_CONFIG_DIR . 'BotService' . DIRECTORY_SEPARATOR),
         );
     }
 }
