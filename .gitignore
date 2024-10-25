@@ -1,22 +1,11 @@
-# Игнорируем данные Docker
 .env
-.docker/
+.env.*
+!.env.example
+!.env.test
+.idea
+/.vscode
+/.pyVenv
 
-# Игнорируем контейнерные и временные файлы
-/vendor/
-/node_modules/
-/composer.lock
-/db_data/
-/public/uploads/
-
-# Логи
-*.log
-
-# Игнорируем все, что связано с конфигурацией IDE
-.idea/
-.vscode/
-/php/vendor
-/neo4j/
-/db/
-/composer.txt
-/php/sessions/
+#OS
+.DS_Store
+Thumbs.db

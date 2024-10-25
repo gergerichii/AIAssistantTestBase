@@ -8,7 +8,7 @@ services:
       TZ: "Europe/Moscow"
     volumes:
       - ./php:/var/www
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./.docker/images/nginx/default.conf:/etc/nginx/conf.d/default.conf
       - phpsocket:/var/run
     networks:
       - assistant-network
@@ -18,13 +18,14 @@ services:
   php:
     container_name: assistant-php
     build:
-      context: ./php
+      context: ./.docker/images/php/
       dockerfile: Dockerfile
     volumes:
       - ./php:/var/www
-      - ./php/php.ini:/usr/local/etc/php/php.ini
-      - ./php/sessions:/var/lib/php/sessions
+      - ./.docker/images/php/php.ini:/usr/local/etc/php/php.ini
+      - ./.docker/volumes/php/sessions:/var/lib/php/sessions
       - phpsocket:/var/run
+      - $HOME/projects:/hostProjects
     links:
       - nginx:assistant-api.local
     networks:
@@ -50,9 +51,11 @@ services:
       POSTGRES_USER: assistant
       POSTGRES_PASSWORD: assistant
     volumes:
-      - ./db:/var/lib/postgresql/data
+      - ./.docker/volumes/postgres/data:/var/lib/postgresql/data
     networks:
       - assistant-network
+    ports:
+      - "5432:5432"  # Выводим порт базы данных наружу
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 10s
@@ -62,6 +65,8 @@ services:
   redis:
     container_name: assistant-redis
     image: redis:7
+    volumes:
+      - ./.docker/volumes/redis/data:/data
     networks:
       - assistant-network
 
@@ -84,13 +89,13 @@ services:
       - "7474:7474"
       - "7687:7687"
     volumes:
-      - ./neo4j/data:/data
-      - ./neo4j/logs:/logs
-      - ./neo4j/conf:/conf
-      - ./neo4j/plugins:/plugins
-      - ./neo4j/licenses:/licenses
-      - ./neo4j/import:/import
-      - ./neo4j/metrics:/metrics
+      - ./.docker/volumes/neo4j/data:/data
+      - ./.docker/volumes/neo4j/logs:/logs
+      - ./.docker/volumes/neo4j/conf:/conf
+      - ./.docker/volumes/neo4j/plugins:/plugins
+      - ./.docker/volumes/neo4j/licenses:/licenses
+      - ./.docker/volumes/neo4j/import:/import
+      - ./.docker/volumes/neo4j/metrics:/metrics
     networks:
       - assistant-network
 
@@ -98,9 +103,7 @@ services:
     container_name: assistant-svelte
     image: node:18-alpine
     volumes:
-      - type: bind
-        source: ./frontend
-        target: /app
+      - ./frontend:/app
     working_dir: /app
     command: sh -c "npm install -g npm@10.9.0 && npm install && npm run dev -- --host"
     ports:
@@ -112,20 +115,100 @@ services:
     networks:
       - assistant-network
 
-  grpc:
-    container_name: assistant-grpc
-    build:
-      context: ./php
-      dockerfile: Dockerfile
+  fastapi:
+    image: assistant-base-python
+    container_name: assistant-fastapi
     volumes:
-      - ./php:/var/www
+      - ./pyCore:/app
+      - ./.docker/volumes/universal/tmp:/tmp
+      - ./.docker/volumes/python/venv:/venv
+      - $HOME/.cache/pip-docker:/root/.cache/pip
+      - $HOME/projects:/hostProjects
+    working_dir: /app/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PATH=/app/.venv/bin:$PATH
+    entrypoint: ["/bin/bash", "-c", "source /venv/bin/activate && exec \"$0\" \"$@\"", "--"]
+    command: ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
     networks:
       - assistant-network
-    depends_on:
-      - php
+
+  jupiter:
+    image: assistant-base-python
+    container_name: assistant-jupyter
+    volumes:
+      - ./pyCore:/app
+      - ./.docker/volumes/universal/tmp:/tmp
+      - ./.docker/volumes/python/venv:/venv
+      - $HOME/.cache/pip-docker:/root/.cache/pip
+      - $HOME/projects:/hostProjects
+    working_dir: /app
     environment:
-      PHP_IDE_CONFIG: "serverName=assistant-grpc"
-      TZ: "Europe/Moscow"
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PATH=/app/.venv/bin:$PATH
+    entrypoint: ["/bin/bash", "-c", "source /venv/bin/activate && exec \"$0\" \"$@\"", "--"]
+    command: ["jupyter-lab", "--ip", "0.0.0.0", "--port", "8888", "--no-browser", "--allow-root"]
+    ports:
+      - "8888:8888"
+    networks:
+      - assistant-network
+
+  etcd:
+    container_name: assistant-etcd
+    image: quay.io/coreos/etcd:v3.5.0
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+    volumes:
+      - ./.docker/volumes/milvus/etcd:/etcd
+    entrypoint: [
+      "etcd",
+      "--advertise-client-urls=http://127.0.0.1:2379",
+      "--listen-client-urls=http://0.0.0.0:2379",
+      "--data-dir",
+      "/etcd"
+    ]
+    networks:
+      - assistant-network
+
+  minio:
+    container_name: assistant-minio
+    image: minio/minio:RELEASE.2020-12-03T00-03-10Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - ./.docker/volumes/milvus/minio:/minio_data
+    entrypoint: ["minio", "server", "/minio_data"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - assistant-network
+
+  milvus:
+    container_name: assistant-milvus
+    image: milvusdb/milvus:latest
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - ./.docker/volumes/milvus/milvus:/var/lib/milvus
+    command: ["milvus", "run", "standalone"]
+    ports:
+      - "19530:19530"
+    depends_on:
+      - "etcd"
+      - "minio"
+    networks:
+      - assistant-network
 
 volumes:
   phpsocket:
@@ -133,3 +216,5 @@ volumes:
 networks:
   assistant-network:
     driver: bridge
+  default:
+    name: assistant-network

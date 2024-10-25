@@ -1,0 +1,32 @@
+services:
+  base-python:
+    container_name: assistant-base-python
+    build:
+      context: ./.docker/images/python
+      dockerfile: Dockerfile
+    image: assistant-base-python
+    volumes:
+      - ./pyCore:/app
+      - ./.docker/images/python/init.sh:/init.sh
+      - ./.docker/volumes/universal/tmp:/tmp
+      - ./.docker/volumes/python/venv:/venv
+      - $HOME/.cache/pip-docker:/root/.cache/pip
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    entrypoint: ["bash", "/init.sh"]
+
+  ide-python:
+    container_name: assistant-ide-python
+    image: assistant-base-python
+    volumes:
+      - ./pyCore:/app
+      - ./.docker/volumes/universal/tmp:/tmp
+      - ./.docker/volumes/python/venv:/venv
+      - $HOME/.cache/pip-docker:/root/.cache/pip
+      - $HOME/projects:/hostProjects
+    working_dir: /app
+    entrypoint: ["/bin/bash", "-c", "source /venv/bin/activate && exec \"$0\" \"$@\"", "--"]
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
