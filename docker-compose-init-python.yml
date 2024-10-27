@@ -14,7 +14,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
-    entrypoint: ["bash", "/init.sh"]
+    command: ["bash","/init.sh"]
 
   ide-python:
     container_name: assistant-ide-python
@@ -26,7 +26,6 @@ services:
       - $HOME/.cache/pip-docker:/root/.cache/pip
       - $HOME/projects:/hostProjects
     working_dir: /app
-    entrypoint: ["/bin/bash", "-c", "source /venv/bin/activate && exec \"$0\" \"$@\"", "--"]
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1

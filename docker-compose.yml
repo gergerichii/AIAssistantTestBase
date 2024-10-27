@@ -128,8 +128,6 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
-      - PATH=/app/.venv/bin:$PATH
-    entrypoint: ["/bin/bash", "-c", "source /venv/bin/activate && exec \"$0\" \"$@\"", "--"]
     command: ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "8000:8000"
@@ -145,13 +143,11 @@ services:
       - ./.docker/volumes/python/venv:/venv
       - $HOME/.cache/pip-docker:/root/.cache/pip
       - $HOME/projects:/hostProjects
-    working_dir: /app
+    working_dir: /app/app
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
-      - PATH=/app/.venv/bin:$PATH
-    entrypoint: ["/bin/bash", "-c", "source /venv/bin/activate && exec \"$0\" \"$@\"", "--"]
-    command: ["jupyter-lab", "--ip", "0.0.0.0", "--port", "8888", "--no-browser", "--allow-root"]
+    command: jupyter-lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root
     ports:
       - "8888:8888"
     networks:
