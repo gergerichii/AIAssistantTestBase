@@ -1,10 +1,10 @@
 from fastapi import FastAPI
-from routers import example
-
+from routers import all_routers
 app = FastAPI()
 
 @app.get("/")
 async def root():
     return {"message": "Hello, FastAPI!"}
 
-app.include_router(example.router)
+for router in all_routers:
+    app.include_router(router)
